@@ -1,0 +1,39 @@
+# Backend Dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+websockets==12.0
+python-multipart==0.0.6
+
+# AI & ML
+requests==2.31.0
+numpy==1.24.3
+
+# Memory & Database
+chromadb==0.4.15
+
+# 🎙️ پشتیبانی صوتی
+openai-whisper==20231117
+pyttsx3==2.90
+speechrecognition==3.10.0
+pyaudio==0.2.11
+
+# 📁 مدیریت فایل
+PyPDF2==3.0.1
+python-docx==1.1.0
+Pillow==10.1.0
+pytesseract==0.3.10
+
+# 📊 تحلیل و آمار
+pandas==2.1.4
+matplotlib==3.8.2
+seaborn==0.13.0
+
+# Utilities
+python-dotenv==1.0.0
+pydantic==2.5.0
+aiofiles==23.2.1
+
+# Development
+pytest==7.4.3
+black==23.11.0
+flake8==6.1.0

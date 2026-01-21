@@ -1,0 +1,107 @@
+# 🦊 روباه - فایل‌های نادیده Git
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ===== Virtual Environment =====
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== Node.js =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# ===== Frontend Build =====
+frontend/build/
+frontend/dist/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# ===== Data & Logs =====
+data/memory/*.sqlite3
+data/memory/*.db
+data/learning/*.jsonl
+data/personality/*.jsonl
+logs/*.log
+logs/*.txt
+
+# ===== OS =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ===== Temporary =====
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+.cache/
+
+# ===== Security =====
+.env
+.env.local
+*.key
+*.pem
+*.p12
+config/secrets.py
+
+# ===== Database =====
+*.db
+*.sqlite
+*.sqlite3
+chroma.sqlite3
+
+# ===== AI Models (اختیاری) =====
+models/
+*.bin
+*.safetensors
+
+# ===== Ollama Cache =====
+.ollama/
+
+# ===== Custom =====
+# فایل‌های شخصی‌سازی شده
+data/personality/custom_*
+data/datasets/user_*
