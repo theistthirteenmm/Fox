@@ -103,9 +103,14 @@ interface SystemStatus {
 interface StatusBarProps {
   isConnected: boolean;
   systemStatus: SystemStatus | null;
+  uploadStatus?: {
+    isUploading: boolean;
+    fileName?: string;
+    progress?: number;
+  };
 }
 
-const StatusBar: React.FC<StatusBarProps> = ({ isConnected, systemStatus }) => {
+const StatusBar: React.FC<StatusBarProps> = ({ isConnected, systemStatus, uploadStatus }) => {
   const [isRestarting, setIsRestarting] = useState(false);
   const [restartStatus, setRestartStatus] = useState<string>('');
 

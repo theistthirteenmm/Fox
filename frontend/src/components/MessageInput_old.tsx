@@ -12,65 +12,6 @@ const InputContainer = styled.div`
   }
 `;
 
-const ProgressBar = styled.div<{ $progress: number }>`
-  width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-  overflow: hidden;
-  margin: 0.5rem 0;
-  
-  &::after {
-    content: '';
-    display: block;
-    width: ${props => props.$progress}%;
-    height: 100%;
-    background: linear-gradient(90deg, #4CAF50, #8BC34A, #CDDC39);
-    border-radius: 3px;
-    transition: width 0.3s ease;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-  }
-`;
-
-const UploadStatus = styled.div<{ $isUploading: boolean }>`
-  display: ${props => props.$isUploading ? 'flex' : 'none'};
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: rgba(76, 175, 80, 0.1);
-  border: 1px solid rgba(76, 175, 80, 0.3);
-  border-radius: 12px;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  color: #4CAF50;
-  
-  .upload-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .spinner {
-    width: 18px;
-    height: 18px;
-    border: 2px solid rgba(76, 175, 80, 0.3);
-    border-top: 2px solid #4CAF50;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  
-  .progress-text {
-    font-weight: bold;
-    color: #2E7D32;
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`;
-
 const InputWrapper = styled.div`
   display: flex;
   gap: 1rem;
@@ -107,6 +48,52 @@ const VoiceButton = styled.button<{ $isRecording?: boolean }>`
   }
 `;
 
+const ProgressBar = styled.div<{ $progress: number }>`
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0.5rem 0;
+  
+  &::after {
+    content: '';
+    display: block;
+    width: ${props => props.$progress}%;
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+`;
+
+const UploadStatus = styled.div<{ $isUploading: boolean }>`
+  display: ${props => props.$isUploading ? 'flex' : 'none'};
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #4CAF50;
+  
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(76, 175, 80, 0.3);
+    border-top: 2px solid #4CAF50;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
 const FileButton = styled.label<{ $isUploading?: boolean }>`
   padding: 1rem;
   border: none;
@@ -114,7 +101,6 @@ const FileButton = styled.label<{ $isUploading?: boolean }>`
   background: ${props => props.$isUploading ? 
     'linear-gradient(135deg, #9E9E9E, #757575)' : 
     'linear-gradient(135deg, #FF9800, #F57C00)'};
-  color: white;
   cursor: ${props => props.$isUploading ? 'not-allowed' : 'pointer'};
   opacity: ${props => props.$isUploading ? 0.6 : 1};
   font-size: 1.5rem;
@@ -125,7 +111,7 @@ const FileButton = styled.label<{ $isUploading?: boolean }>`
   min-width: 60px;
   height: 60px;
   
-  &:hover:not([aria-disabled="true"]) {
+  &:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
   }
@@ -134,6 +120,7 @@ const FileButton = styled.label<{ $isUploading?: boolean }>`
     display: none;
   }
 `;
+
 const TextArea = styled.textarea<{ $disabled: boolean }>`
   flex: 1;
   min-height: 80px;
@@ -217,6 +204,15 @@ const SendButton = styled.button<{ $disabled: boolean }>`
   }
 `;
 
+const CharCounter = styled.div<{ $isNearLimit: boolean }>`
+  position: absolute;
+  bottom: 8px;
+  left: 16px;
+  font-size: 0.75rem;
+  color: ${props => props.$isNearLimit ? '#ff6b6b' : 'rgba(255, 255, 255, 0.5)'};
+  pointer-events: none;
+`;
+
 const InputGroup = styled.div`
   position: relative;
   flex: 1;
@@ -252,6 +248,7 @@ interface MessageInputProps {
   autoPlayEnabled?: boolean;
   onAutoPlayToggle?: (enabled: boolean) => void;
 }
+
 const MessageInput: React.FC<MessageInputProps> = ({
   onSendMessage,
   disabled = false,
@@ -263,7 +260,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   const [showQuickActions, setShowQuickActions] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingStatus, setRecordingStatus] = useState('');
-  const [localAutoPlay, setLocalAutoPlay] = useState(autoPlayEnabled);
+  const [localAutoPlay, setLocalAutoPlay] = useState(autoPlayEnabled); // حالت محلی
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState('');
@@ -271,86 +268,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || isUploading) return;
-
-    setIsUploading(true);
-    setUploadProgress(0);
-    
-    const fileSize = file.size;
-    const fileSizeFormatted = formatFileSize(fileSize);
-    setUploadStatus(`آپلود ${file.name} (${fileSizeFormatted})`);
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const startTime = Date.now();
-      let progress = 0;
-      
-      // شبیه‌سازی progress با نمایش سرعت
-      const progressInterval = setInterval(() => {
-        progress += Math.random() * 8 + 3; // افزایش 3-11%
-        if (progress > 85) progress = 85; // توقف در 85% تا response بیاد
-        
-        const elapsed = Math.max((Date.now() - startTime) / 1000, 0.1);
-        const uploadedBytes = (fileSize * progress / 100);
-        const speed = uploadedBytes / elapsed;
-        const speedFormatted = formatFileSize(speed);
-        
-        setUploadProgress(Math.min(progress, 85));
-        setUploadStatus(`آپلود ${file.name} - ${speedFormatted}/s`);
-      }, 150);
-
-      const response = await fetch('http://localhost:8000/files/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setUploadStatus(`✅ ${file.name} آپلود شد!`);
-        setMessage(`فایل "${result.file_info.filename}" آپلود شد.\n\n${result.content_preview}`);
-        
-        setTimeout(() => {
-          setUploadStatus('');
-        }, 2000);
-      } else {
-        setUploadStatus('❌ خطا در آپلود فایل');
-        setTimeout(() => {
-          setUploadStatus('');
-        }, 3000);
-      }
-    } catch (error) {
-      console.error('خطا در آپلود فایل:', error);
-      setUploadStatus('❌ خطا در ارتباط با سرور');
-      setTimeout(() => {
-        setUploadStatus('');
-      }, 3000);
-    } finally {
-      setIsUploading(false);
-      setTimeout(() => {
-        setUploadProgress(0);
-        setUploadStatus('');
-      }, 2000);
-    }
-
-    event.target.value = '';
-  };
-  // باقی توابع (startRecording, stopRecording, etc.) مثل قبل...
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -416,6 +333,114 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }
   };
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || isUploading) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadStatus(`در حال آپلود ${file.name}...`);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      // شبیه‌سازی progress برای فایل‌های کوچک
+      const fileSize = file.size;
+      let progress = 0;
+      
+      const progressInterval = setInterval(() => {
+        progress += Math.random() * 15 + 5; // افزایش تصادفی 5-20%
+        if (progress > 90) progress = 90; // توقف در 90% تا response بیاد
+        setUploadProgress(Math.min(progress, 90));
+      }, 100);
+
+      const response = await fetch('http://localhost:8000/files/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setUploadStatus('✅ آپلود موفق!');
+        setMessage(`فایل "${result.file_info.filename}" آپلود شد.\n\n${result.content_preview}`);
+        
+        setTimeout(() => {
+          setUploadStatus('');
+        }, 2000);
+      } else {
+        setUploadStatus('❌ خطا در آپلود');
+        setTimeout(() => {
+          setUploadStatus('');
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('خطا در آپلود فایل:', error);
+      setUploadStatus('❌ خطا در ارتباط');
+      setTimeout(() => {
+        setUploadStatus('');
+      }, 3000);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      setTimeout(() => {
+        setUploadStatus('');
+      }, 3000);
+    }
+
+    event.target.value = '';
+  };
+
+  const playTextToSpeech = async (text: string) => {
+    if (!text.trim()) return;
+
+    try {
+      setRecordingStatus('در حال تولید صدا...');
+      
+      const formData = new FormData();
+      formData.append('text', text);
+
+      const response = await fetch('http://localhost:8000/speech/text-to-speech', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        
+        audio.onplay = () => setRecordingStatus('🔊 در حال پخش...');
+        audio.onended = () => {
+          setRecordingStatus('✅ پخش تمام شد');
+          URL.revokeObjectURL(audioUrl);
+          setTimeout(() => setRecordingStatus(''), 2000);
+        };
+        
+        await audio.play();
+      } else {
+        setRecordingStatus('❌ خطا در تولید صدا');
+        setTimeout(() => setRecordingStatus(''), 3000);
+      }
+    } catch (error) {
+      console.error('خطا در تولید صدا:', error);
+      setRecordingStatus('❌ خطا در تولید صدا');
+      setTimeout(() => setRecordingStatus(''), 3000);
+    }
+  };
+
   const toggleAutoPlay = () => {
     const newState = !localAutoPlay;
     setLocalAutoPlay(newState);
@@ -428,7 +453,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     );
     setTimeout(() => setRecordingStatus(''), 2000);
   };
-
+  
   const maxLength = 1000;
   const isNearLimit = message.length > maxLength * 0.8;
   const canSend = message.trim().length > 0 && !disabled && message.length <= maxLength;
@@ -479,20 +504,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
     setShowQuickActions(false);
     textareaRef.current?.focus();
   };
+
   return (
     <InputContainer>
-      {/* نمایش وضعیت آپلود با progress bar */}
+      {/* نمایش وضعیت آپلود */}
       <UploadStatus $isUploading={isUploading}>
-        <div className="upload-info">
-          <div className="spinner"></div>
-          <span>{uploadStatus}</span>
-        </div>
-        <div className="progress-text">
-          {uploadProgress > 0 && `${Math.round(uploadProgress)}%`}
-        </div>
+        <div className="spinner"></div>
+        <span>{uploadStatus}</span>
+        {uploadProgress > 0 && <span>({Math.round(uploadProgress)}%)</span>}
       </UploadStatus>
       
-      {/* Progress Bar */}
+      {/* نمایش progress bar */}
       {isUploading && <ProgressBar $progress={uploadProgress} />}
       
       {showQuickActions && message.length === 0 && (
@@ -553,6 +575,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
             $disabled={disabled}
             rows={1}
           />
+          {message.length > 0 && (
+            <CharCounter $isNearLimit={isNearLimit}>
+              {message.length}/{maxLength}
+            </CharCounter>
+          )}
         </InputGroup>
         
         <SendButton
