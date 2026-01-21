@@ -342,6 +342,66 @@ async def get_dashboard_data():
     except Exception as e:
         return {"error": f"خطا در دریافت داده‌های داشبورد: {str(e)}"}
 
+# 💻 Code Analysis API Endpoints
+@app.post("/code/analyze")
+async def analyze_code(code: str = Form(...), language: str = Form(None)):
+    """تحلیل کد برنامه‌نویسی"""
+    try:
+        from brain.code_analyzer import code_analyzer
+        
+        # تحلیل کد
+        analysis = code_analyzer.analyze_code(code, f"temp.{language}" if language else None)
+        
+        return {
+            "success": True,
+            "analysis": analysis,
+            "message": "کد با موفقیت تحلیل شد"
+        }
+        
+    except Exception as e:
+        return {"error": f"خطا در تحلیل کد: {str(e)}"}
+
+@app.post("/code/fix")
+async def fix_code(code: str = Form(...), language: str = Form(None)):
+    """اصلاح خودکار کد"""
+    try:
+        from brain.code_analyzer import code_analyzer
+        
+        # تشخیص زبان
+        detected_language = code_analyzer.detect_language(code, f"temp.{language}" if language else None)
+        
+        # اصلاح کد
+        fixed_code = code_analyzer.fix_common_issues(code, detected_language)
+        
+        # تحلیل کد اصلاح شده
+        analysis = code_analyzer.analyze_code(fixed_code)
+        
+        return {
+            "success": True,
+            "original_code": code,
+            "fixed_code": fixed_code,
+            "language": detected_language,
+            "improvements": analysis.get('general_suggestions', []),
+            "message": "کد اصلاح شد"
+        }
+        
+    except Exception as e:
+        return {"error": f"خطا در اصلاح کد: {str(e)}"}
+
+@app.get("/code/languages")
+async def get_supported_languages():
+    """لیست زبان‌های پشتیبانی شده"""
+    try:
+        from brain.code_analyzer import code_analyzer
+        
+        return {
+            "supported_languages": list(code_analyzer.supported_languages.keys()),
+            "extensions": code_analyzer.supported_languages
+        }
+        
+    except Exception as e:
+        return {"error": f"خطا در دریافت زبان‌ها: {str(e)}"}
+
 # 🔄 System Management API Endpoints
 @app.post("/system/restart")
 async def restart_system():

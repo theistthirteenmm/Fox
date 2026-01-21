@@ -6,12 +6,14 @@
 import asyncio
 import json
 import requests
+import re
 from typing import Dict, List, Optional
 from datetime import datetime
 import os
 import random
 from .web_search import WebSearchEngine
 from .dataset_manager import DatasetManager
+from .code_analyzer import code_analyzer
 
 class AIBrain:
     def __init__(self):
@@ -96,6 +98,9 @@ class AIBrain:
             print("🔄 مدل بارگذاری نشده، در حال راه‌اندازی...")
             await self.initialize_model()
         
+        # بررسی وجود کد در پیام
+        code_analysis = self.analyze_user_code(message)
+        
         # تحلیل پیام کاربر
         analysis = self.dataset_manager.analyze_user_message(message, context)
         print(f"🔍 تحلیل پیام: {analysis}")
@@ -122,6 +127,11 @@ class AIBrain:
         # اگر enhanced_prompt خالی بود، از _build_prompt استفاده کن
         if not enhanced_prompt or enhanced_prompt.strip() == "":
             enhanced_prompt = self._build_prompt(message, context, personality, web_info)
+        
+        # اضافه کردن تحلیل کد به prompt
+        if code_analysis:
+            code_prompt = self._build_code_analysis_prompt(code_analysis)
+            enhanced_prompt += f"\n\n{code_prompt}"
         
         # اضافه کردن اطلاعات وب به prompt
         if web_info and web_info.get('summary'):
@@ -287,7 +297,122 @@ class AIBrain:
             "search_engines": list(self.web_search.search_engines.keys()) if hasattr(self, 'web_search') else []
         }
     
-    def _generate_fallback_response(self, message: str, web_info: Dict = None) -> str:
+    def _build_code_analysis_prompt(self, code_analysis: Dict) -> str:
+        """ساخت prompt برای تحلیل کد"""
+        analysis = code_analysis['analysis']
+        original_code = code_analysis['original_code']
+        
+        prompt = f"""
+🔍 تحلیل کد ارائه شده:
+
+کد اصلی:
+```{analysis['language']}
+{original_code}
+```
+
+نتایج تحلیل:
+- زبان برنامه‌نویسی: {analysis['language']}
+- تعداد خطوط: {analysis['lines_count']}
+- پیچیدگی: {analysis['complexity']}
+- صحت syntax: {'✅ صحیح' if analysis['syntax_valid'] else '❌ خطا دارد'}
+
+"""
+        
+        # اضافه کردن مشکلات
+        if analysis['issues']:
+            prompt += "🚨 مشکلات یافت شده:\n"
+            for issue in analysis['issues']:
+                prompt += f"- خط {issue['line']}: {issue['message']} ({issue['severity']})\n"
+            prompt += "\n"
+        
+        # اضافه کردن پیشنهادات
+        if analysis['suggestions']:
+            prompt += "💡 پیشنهادات بهبود:\n"
+            for suggestion in analysis['suggestions']:
+                prompt += f"- خط {suggestion['line']}: {suggestion['message']}\n"
+            prompt += "\n"
+        
+        # اضافه کردن پیشنهادات عمومی
+        if analysis.get('general_suggestions'):
+            prompt += "🎯 پیشنهادات عمومی:\n"
+            for suggestion in analysis['general_suggestions']:
+                prompt += f"- {suggestion}\n"
+            prompt += "\n"
+        
+        # اضافه کردن کد اصلاح شده
+        if analysis['fixed_code'] != original_code:
+            prompt += f"🔧 کد اصلاح شده:\n```{analysis['language']}\n{analysis['fixed_code']}\n```\n\n"
+        
+        prompt += """
+لطفاً به عنوان یک برنامه‌نویس ماهر:
+1. کد را بررسی کن و مشکلات احتمالی را توضیح بده
+2. راه‌حل‌های بهتر پیشنهاد بده
+3. اگر کد خطا داره، نحوه اصلاح را بگو
+4. بهترین practices را توضیح بده
+5. به زبان فارسی و به صورت ساده توضیح بده
+"""
+        
+        return prompt
+
+    def detect_code_in_message(self, message: str) -> bool:
+        """تشخیص وجود کد در پیام"""
+        code_indicators = [
+            'def ', 'function', 'class ', 'import ', 'from ',
+            'var ', 'let ', 'const ', 'if (', 'for (', 'while (',
+            'public class', '#include', 'SELECT', 'INSERT',
+            '```', 'کد', 'برنامه', 'اسکریپت', 'function',
+            '{', '}', '()', '=>', '==', '!=', '&&', '||'
+        ]
+        
+        message_lower = message.lower()
+        return any(indicator in message_lower for indicator in code_indicators)
+    
+    def extract_code_from_message(self, message: str) -> str:
+        """استخراج کد از پیام"""
+        # اگر کد در ``` قرار داره
+        code_blocks = re.findall(r'```(?:\w+)?\n?(.*?)\n?```', message, re.DOTALL)
+        if code_blocks:
+            return code_blocks[0].strip()
+        
+        # اگر کد در خطوط جداگانه هست
+        lines = message.split('\n')
+        code_lines = []
+        in_code_block = False
+        
+        for line in lines:
+            if any(indicator in line for indicator in ['def ', 'function', 'class ', 'import']):
+                in_code_block = True
+            
+            if in_code_block:
+                code_lines.append(line)
+                
+                # اگر خط خالی یا غیرکد بود، توقف
+                if line.strip() == '' or (not any(c in line for c in ['{', '}', '(', ')', '=', ';'])):
+                    if len(code_lines) > 1:
+                        break
+        
+        return '\n'.join(code_lines).strip()
+    
+    def analyze_user_code(self, message: str) -> Optional[Dict]:
+        """تحلیل کد کاربر"""
+        if not self.detect_code_in_message(message):
+            return None
+        
+        code = self.extract_code_from_message(message)
+        if not code:
+            return None
+        
+        print(f"🔍 کد تشخیص داده شد: {code[:50]}...")
+        
+        # تحلیل کد
+        analysis = code_analyzer.analyze_code(code)
+        
+        return {
+            'original_code': code,
+            'analysis': analysis,
+            'has_issues': len(analysis['issues']) > 0,
+            'has_suggestions': len(analysis['suggestions']) > 0
+        }
         """تولید پاسخ fallback وقتی مدل کار نمی‌کند"""
         
         # اگر اطلاعات وب داریم
