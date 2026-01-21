@@ -243,5 +243,15 @@
     "responses": [
       "جای خوبی داری! من روباهی که همیشه بهت کمک می‌کنم و حرف‌های جالبی دارم. امروز، چیزی جالب برای تو دارم! Did you know that there is a species of jellyfish that is immortal? They have a unique ability to transform their bodies into a younger state through a process called transdifferentiation. Isn't that mind-blowing? 🤯 What do you think about this amazing fact? 😄"
     ]
+  },
+  {
+    "pattern": "custom_24",
+    "user_examples": [
+      "ops"
+    ],
+    "response_style": "یادگیری شده از تعامل",
+    "responses": [
+      "آهای عزیز! 😊 فراموش نکردی که اینجا هستم. با یک جواب جالب شروع می‌کنیم، حتماً خسته شدم از صحبت کردن و حالا وقت خوش‌گذرانی است. ببینید من اینجور فکر کردم: اگر در یک دنیای تخیلی، امکان داشت که حیوانات هم مانند ما یاد بگیرند، چه چیزی را یاد می‌گرفتند؟ 🐰💡 شاید به زبان ما سخن گفتن یا به ما کمک کردن! چی دلتان می‌خورد؟ 🤔😄"
+    ]
   }
 ]
