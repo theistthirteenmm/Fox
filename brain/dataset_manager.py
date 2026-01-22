@@ -276,8 +276,46 @@ class DatasetManager:
         
         return prompt
     
-    def get_suggested_response(self, analysis: Dict) -> Optional[str]:
+    def get_similar_responses(self, message: str, analysis: Dict) -> List[str]:
+        """پیدا کردن پاسخ‌های مشابه از dataset"""
+        similar_responses = []
+        
+        # جستجو در الگوهای مکالمه
+        for pattern in self.conversation_patterns:
+            if any(keyword in message.lower() for keyword in pattern.get("user_examples", [])):
+                similar_responses.extend(pattern.get("responses", []))
+        
+        # جستجو بر اساس احساس
+        if analysis["emotion"] != "neutral":
+            emotion_data = self.emotion_responses.get(analysis["emotion"])
+            if emotion_data:
+                similar_responses.extend(emotion_data.get("responses", []))
+        
+        return similar_responses[:5]  # حداکثر 5 مورد
+    
+    def get_conversation_patterns(self, analysis: Dict) -> List[Dict]:
+        """پیدا کردن الگوهای مکالمه مرتبط"""
+        relevant_patterns = []
+        
+        for pattern in self.conversation_patterns:
+            # بررسی تطبیق با الگوهای تشخیص داده شده
+            if pattern["pattern"] in analysis.get("patterns", []):
+                relevant_patterns.append(pattern)
+        
+        return relevant_patterns[:3]  # حداکثر 3 مورد
         """پیشنهاد پاسخ بر اساس الگوها"""
+        
+        # اگر سؤال پیچیده یا تخصصی باشه، از دیتاست استفاده نکن
+        if analysis["complexity"] in ["complex", "technical"]:
+            return None
+        
+        # اگر موضوع خاصی داره (مثل آب و هوا، اخبار، اطلاعات فنی)، از دیتاست استفاده نکن
+        if analysis["topic"] and analysis["topic"] not in ["conversation", "general"]:
+            return None
+        
+        # فقط برای مکالمات ساده و عمومی از دیتاست استفاده کن
+        if analysis["intent"] != "conversation":
+            return None
         
         # اگر الگوی مشخصی پیدا شد
         if analysis["patterns"]:

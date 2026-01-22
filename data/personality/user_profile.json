@@ -1,0 +1,21 @@
+{
+  "created_at": "2026-01-22T10:15:25.822741",
+  "name": null,
+  "preferences": {
+    "communication_style": "informal",
+    "response_length": "medium",
+    "topics_of_interest": [
+      "وب",
+      "کار"
+    ],
+    "learning_goals": []
+  },
+  "personality_insights": {
+    "communication_patterns": [],
+    "emotional_tendencies": [],
+    "interaction_frequency": {}
+  },
+  "relationship_level": 1,
+  "trust_score": 5.0,
+  "last_updated": "2026-01-22T11:23:39.020892"
+}

@@ -317,7 +317,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         
         {isLoading && (
           <LoadingIndicator>
-            <span>🦊 روباه در حال فکر کردن</span>
+            <span>صبور باشید، در حال آماده کردن جواب روباه...</span>
             <div className="dots">
               <div className="dot"></div>
               <div className="dot"></div>

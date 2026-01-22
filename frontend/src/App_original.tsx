@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
-import ChatInterface from './components/ChatInterface.tsx';
-import StatusBar from './components/StatusBar.tsx';
+import ChatInterface from './components/ChatInterface';
+import StatusBar from './components/StatusBar';
 import './App.css';
 
 const fadeIn = keyframes`
@@ -102,7 +102,7 @@ const BackgroundPattern = styled.div`
 
 interface Message {
   id: string;
-  type: 'user' | 'ai' | 'system';
+  type: 'user' | 'ai' | 'system' | 'thinking';
   message: string;
   timestamp: string;
   shouldAutoPlay?: boolean; // برای پخش خودکار
@@ -184,29 +184,38 @@ function App() {
         try {
           const data = JSON.parse(event.data);
           
-          // اگر thinking message باشه
           if (data.type === 'thinking') {
-            setIsLoading(true);
-            // نمایش پیام thinking به عنوان loading
-            return;
-          }
-          
-          // اگر پیام معمولی باشه، loading رو خاموش کن
-          setIsLoading(false);
-          
-          const newMessage: Message = {
-            id: Date.now().toString(),
-            type: data.type,
-            message: data.message,
-            timestamp: data.timestamp,
-            shouldAutoPlay: data.type === 'ai' && autoPlayEnabled // پخش خودکار برای پیام‌های AI
-          };
-          
-          setMessages(prev => [...prev, newMessage]);
+            // برای پیام‌های thinking، آخرین پیام thinking را جایگزین کن
+            setMessages(prev => {
+              const filtered = prev.filter(msg => msg.type !== 'thinking');
+              const newMessage: Message = {
+                id: 'thinking-' + Date.now().toString(),
+                type: 'thinking',
+                message: data.message,
+                timestamp: data.timestamp
+              };
+              return [...filtered, newMessage];
+            });
+          } else {
+            // برای پیام‌های عادی، پیام‌های thinking را حذف کن و پیام جدید اضافه کن
+            setMessages(prev => {
+              const filtered = prev.filter(msg => msg.type !== 'thinking');
+              const newMessage: Message = {
+                id: Date.now().toString(),
+                type: data.type,
+                message: data.message,
+                timestamp: data.timestamp,
+                shouldAutoPlay: data.type === 'ai' && autoPlayEnabled // پخش خودکار برای پیام‌های AI
+              };
+              return [...filtered, newMessage];
+            });
+            
+            setIsLoading(false);
 
-          // پخش خودکار اگه فعال باشه
-          if (newMessage.shouldAutoPlay && newMessage.type === 'ai') {
-            setTimeout(() => playTextToSpeech(newMessage.message), 500);
+            // پخش خودکار اگه فعال باشه
+            if (data.type === 'ai' && autoPlayEnabled) {
+              setTimeout(() => playTextToSpeech(data.message), 500);
+            }
           }
         } catch (error) {
           console.error('خطا در پردازش پیام:', error);
@@ -333,6 +342,8 @@ function App() {
           onSendMessage={sendMessage}
           isLoading={isLoading}
           isConnected={isConnected}
+          autoPlayEnabled={autoPlayEnabled}
+          onAutoPlayToggle={setAutoPlayEnabled}
         />
       </MainContent>
     </AppContainer>

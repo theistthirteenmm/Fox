@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>تست فرانت روباه</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .success { background: rgba(34, 197, 94, 0.3); }
+        .error { background: rgba(239, 68, 68, 0.3); }
+        .warning { background: rgba(245, 158, 11, 0.3); }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🦊 تست سیستم روباه</h1>
+        
+        <div id="backend-status" class="status warning">
+            🔄 در حال بررسی Backend...
+        </div>
+        
+        <div id="frontend-status" class="status warning">
+            🔄 در حال بررسی Frontend...
+        </div>
+        
+        <div id="websocket-status" class="status warning">
+            🔄 در حال بررسی WebSocket...
+        </div>
+        
+        <button onclick="testBackend()">تست Backend</button>
+        <button onclick="testWebSocket()">تست WebSocket</button>
+        <button onclick="openFrontend()">باز کردن Frontend</button>
+        
+        <div id="results" style="margin-top: 30px;"></div>
+    </div>
+
+    <script>
+        async function testBackend() {
+            const statusDiv = document.getElementById('backend-status');
+            statusDiv.innerHTML = '🔄 در حال تست Backend...';
+            statusDiv.className = 'status warning';
+            
+            try {
+                const response = await fetch('http://localhost:8000/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.innerHTML = `✅ Backend فعال - مدل: ${data.brain_loaded ? 'آماده' : 'خاموش'}`;
+                    statusDiv.className = 'status success';
+                } else {
+                    statusDiv.innerHTML = `❌ Backend خطا: ${response.status}`;
+                    statusDiv.className = 'status error';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '❌ Backend در دسترس نیست';
+                statusDiv.className = 'status error';
+            }
+        }
+
+        async function testWebSocket() {
+            const statusDiv = document.getElementById('websocket-status');
+            statusDiv.innerHTML = '🔄 در حال تست WebSocket...';
+            statusDiv.className = 'status warning';
+            
+            try {
+                const ws = new WebSocket('ws://localhost:8000/chat');
+                
+                ws.onopen = () => {
+                    statusDiv.innerHTML = '✅ WebSocket متصل شد';
+                    statusDiv.className = 'status success';
+                    ws.close();
+                };
+                
+                ws.onerror = () => {
+                    statusDiv.innerHTML = '❌ WebSocket خطا';
+                    statusDiv.className = 'status error';
+                };
+                
+                setTimeout(() => {
+                    if (ws.readyState === WebSocket.CONNECTING) {
+                        statusDiv.innerHTML = '❌ WebSocket timeout';
+                        statusDiv.className = 'status error';
+                        ws.close();
+                    }
+                }, 5000);
+                
+            } catch (error) {
+                statusDiv.innerHTML = '❌ WebSocket در دسترس نیست';
+                statusDiv.className = 'status error';
+            }
+        }
+
+        function openFrontend() {
+            window.open('http://localhost:3000', '_blank');
+        }
+
+        // تست خودکار در شروع
+        window.onload = () => {
+            testBackend();
+            setTimeout(testWebSocket, 1000);
+            
+            // بررسی Frontend
+            fetch('http://localhost:3000')
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById('frontend-status').innerHTML = '✅ Frontend فعال';
+                        document.getElementById('frontend-status').className = 'status success';
+                    } else {
+                        document.getElementById('frontend-status').innerHTML = '❌ Frontend خطا';
+                        document.getElementById('frontend-status').className = 'status error';
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('frontend-status').innerHTML = '❌ Frontend در دسترس نیست';
+                    document.getElementById('frontend-status').className = 'status error';
+                });
+        };
+    </script>
+</body>
+</html>

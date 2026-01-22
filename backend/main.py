@@ -94,8 +94,20 @@ async def websocket_endpoint(websocket: WebSocket):
             
             print(f"پیام دریافتی: {user_message}")
             
+            # تعریف thinking callback برای این WebSocket
+            async def thinking_callback(message: str):
+                thinking_response = {
+                    "type": "thinking",
+                    "message": message,
+                    "timestamp": datetime.now().isoformat()
+                }
+                try:
+                    await websocket.send_text(json.dumps(thinking_response, ensure_ascii=False))
+                except:
+                    pass  # اگر ارسال ناموفق بود، نادیده بگیر
+            
             # پردازش پیام توسط AI
-            response = await process_user_message(user_message["message"])
+            response = await process_user_message(user_message["message"], thinking_callback)
             
             # ارسال پاسخ
             ai_response = {
@@ -162,42 +174,178 @@ async def text_to_speech(text: str = Form(...)):
 async def speech_to_text(audio_file: UploadFile = File(...)):
     """تبدیل صدا به متن"""
     try:
+        print(f"🎤 دریافت فایل صوتی: {audio_file.filename}")
+        print(f"📊 نوع محتوا: {audio_file.content_type}")
+        
+        # خواندن محتوای فایل
+        content = await audio_file.read()
+        file_size = len(content)
+        print(f"📏 حجم فایل: {file_size} bytes")
+        
+        if file_size < 100:
+            return {
+                "text": "",
+                "success": False,
+                "message": f"فایل صوتی خیلی کوچک است ({file_size} bytes)",
+                "debug_info": {
+                    "file_size": file_size,
+                    "content_type": audio_file.content_type,
+                    "filename": audio_file.filename
+                }
+            }
+        
         # بررسی فرمت فایل
         if not speech_handler.is_audio_file(audio_file.filename):
-            return {"error": "فرمت فایل صوتی پشتیبانی نمی‌شود"}
+            return {
+                "text": "",
+                "success": False,
+                "message": f"فرمت فایل پشتیبانی نمی‌شود: {audio_file.filename}",
+                "debug_info": {
+                    "supported_formats": speech_handler.supported_formats,
+                    "received_filename": audio_file.filename
+                }
+            }
         
         # ذخیره موقت فایل
         temp_dir = Path("data/temp/audio")
         temp_dir.mkdir(parents=True, exist_ok=True)
         
-        temp_file = temp_dir / f"upload_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{audio_file.filename}"
+        # تشخیص فرمت از content-type
+        file_extension = ".wav"  # پیش‌فرض
+        if audio_file.content_type:
+            if "webm" in audio_file.content_type:
+                file_extension = ".webm"
+            elif "mp3" in audio_file.content_type:
+                file_extension = ".mp3"
+            elif "m4a" in audio_file.content_type:
+                file_extension = ".m4a"
+        
+        temp_file = temp_dir / f"upload_{datetime.now().strftime('%Y%m%d_%H%M%S')}{file_extension}"
+        
+        print(f"💾 ذخیره در: {temp_file}")
         
         with open(temp_file, "wb") as f:
-            content = await audio_file.read()
             f.write(content)
         
+        # بررسی فایل ذخیره شده
+        if not temp_file.exists():
+            return {
+                "text": "",
+                "success": False,
+                "message": "خطا در ذخیره فایل موقت"
+            }
+        
+        saved_size = temp_file.stat().st_size
+        print(f"✅ فایل ذخیره شد: {saved_size} bytes")
+        
         # تبدیل به متن
+        print("🔄 شروع تبدیل صدا به متن...")
         text = await speech_handler.speech_to_text(audio_file=str(temp_file))
         
         # پاک کردن فایل موقت
-        if temp_file.exists():
-            temp_file.unlink()
+        try:
+            if temp_file.exists():
+                temp_file.unlink()
+                print("🗑️ فایل موقت پاک شد")
+        except Exception as cleanup_error:
+            print(f"⚠️ خطا در پاک کردن فایل موقت: {cleanup_error}")
         
-        if text:
+        if text and text.strip():
             return {
-                "text": text,
+                "text": text.strip(),
                 "success": True,
-                "message": "صدا با موفقیت به متن تبدیل شد"
+                "message": "صدا با موفقیت به متن تبدیل شد",
+                "debug_info": {
+                    "original_size": file_size,
+                    "saved_size": saved_size,
+                    "text_length": len(text.strip()),
+                    "temp_file": str(temp_file)
+                }
             }
         else:
             return {
                 "text": "",
                 "success": False,
-                "message": "متنی در صدا تشخیص داده نشد"
+                "message": "متنی در صدا تشخیص داده نشد - لطفاً واضح‌تر و بلندتر صحبت کنید",
+                "debug_info": {
+                    "whisper_result": text,
+                    "file_processed": True,
+                    "file_size": file_size
+                }
             }
             
     except Exception as e:
-        return {"error": f"خطا در تبدیل صدا به متن: {str(e)}"}
+        print(f"❌ خطای کلی در تبدیل صدا به متن: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        return {
+            "text": "",
+            "success": False,
+            "message": f"خطا در تبدیل صدا به متن: {str(e)}",
+            "debug_info": {
+                "error_type": type(e).__name__,
+                "error_message": str(e)
+            }
+        }
+
+@app.get("/speech/debug")
+async def debug_speech_system():
+    """تست و دیباگ سیستم صوتی"""
+    try:
+        debug_info = {
+            "speech_handler_status": speech_handler.get_status(),
+            "temp_directory": str(Path("data/temp/audio")),
+            "temp_dir_exists": Path("data/temp/audio").exists(),
+            "supported_formats": speech_handler.supported_formats,
+            "whisper_model_loaded": speech_handler.whisper_model is not None,
+            "tts_engine_ready": speech_handler.tts_engine is not None
+        }
+        
+        # بررسی فایل‌های موقت
+        temp_dir = Path("data/temp/audio")
+        if temp_dir.exists():
+            temp_files = list(temp_dir.glob("*"))
+            debug_info["temp_files_count"] = len(temp_files)
+            debug_info["temp_files"] = [str(f) for f in temp_files[:5]]  # فقط 5 فایل اول
+        else:
+            debug_info["temp_files_count"] = 0
+            debug_info["temp_files"] = []
+        
+        # تست ساده TTS
+        try:
+            test_text = "سلام، این یک تست است"
+            temp_tts_file = temp_dir / "test_tts.wav"
+            temp_dir.mkdir(parents=True, exist_ok=True)
+            
+            tts_success = await speech_handler.text_to_speech(test_text, str(temp_tts_file))
+            debug_info["tts_test"] = {
+                "success": tts_success,
+                "test_file_created": temp_tts_file.exists(),
+                "test_file_size": temp_tts_file.stat().st_size if temp_tts_file.exists() else 0
+            }
+            
+            # پاک کردن فایل تست
+            if temp_tts_file.exists():
+                temp_tts_file.unlink()
+                
+        except Exception as tts_error:
+            debug_info["tts_test"] = {
+                "success": False,
+                "error": str(tts_error)
+            }
+        
+        return {
+            "success": True,
+            "debug_info": debug_info,
+            "message": "اطلاعات دیباگ سیستم صوتی"
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"خطا در دیباگ سیستم صوتی: {str(e)}"
+        }
 
 @app.get("/speech/status")
 async def get_speech_status():
@@ -525,7 +673,7 @@ async def system_health():
             "timestamp": datetime.now().isoformat()
         }
 
-async def process_user_message(message: str) -> str:
+async def process_user_message(message: str, thinking_callback=None) -> str:
     """پردازش پیام کاربر و تولید پاسخ"""
     try:
         # ذخیره در حافظه
@@ -538,7 +686,8 @@ async def process_user_message(message: str) -> str:
         response = await ai_brain.generate_response(
             message=message,
             context=memory_manager.get_relevant_context(message),
-            personality=personality_context
+            personality=personality_context,
+            thinking_callback=thinking_callback
         )
         
         # ذخیره پاسخ در حافظه
@@ -552,6 +701,25 @@ async def process_user_message(message: str) -> str:
     except Exception as e:
         print(f"خطا در پردازش پیام: {e}")
         return "متأسفم، مشکلی پیش آمده. لطفاً دوباره تلاش کنید."
+
+async def send_thinking_message(message: str):
+    """ارسال پیام میانی به کاربر"""
+    try:
+        thinking_response = {
+            "type": "thinking",
+            "message": message,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # ارسال به تمام کاربران متصل
+        for connection in manager.active_connections:
+            try:
+                await connection.send_text(json.dumps(thinking_response, ensure_ascii=False))
+            except:
+                pass  # اگر ارسال ناموفق بود، نادیده بگیر
+                
+    except Exception as e:
+        print(f"خطا در ارسال پیام میانی: {e}")
 
 if __name__ == "__main__":
     print("🚀 در حال راه‌اندازی روباه...")

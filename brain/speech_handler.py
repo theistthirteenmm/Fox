@@ -105,9 +105,41 @@ class SpeechHandler:
                 print(f"❌ فایل صوتی یافت نشد: {audio_file}")
                 return None
             
-            print(f"🔄 در حال تحلیل فایل: {audio_file}")
-            result = self.whisper_model.transcribe(audio_file, language="fa")
+            file_size = os.path.getsize(audio_file)
+            print(f"🔄 در حال تحلیل فایل: {audio_file} (حجم: {file_size} bytes)")
+            
+            if file_size < 1000:  # کمتر از 1KB
+                print(f"⚠️ فایل صوتی خیلی کوچک است: {file_size} bytes")
+                return None
+            
+            # بررسی فرمت فایل
+            file_ext = Path(audio_file).suffix.lower()
+            if file_ext not in self.supported_formats:
+                print(f"⚠️ فرمت فایل پشتیبانی نمی‌شود: {file_ext}")
+                # تلاش برای تبدیل فرمت
+                try:
+                    import subprocess
+                    converted_file = audio_file.replace(file_ext, '.wav')
+                    subprocess.run(['ffmpeg', '-i', audio_file, converted_file], 
+                                 capture_output=True, check=True)
+                    audio_file = converted_file
+                    print(f"✅ فایل به WAV تبدیل شد: {converted_file}")
+                except:
+                    print("❌ تبدیل فرمت ناموفق بود")
+                    return None
+            
+            result = self.whisper_model.transcribe(
+                audio_file, 
+                language="fa",  # فارسی
+                fp16=False,     # برای سازگاری بیشتر
+                verbose=True    # لاگ بیشتر
+            )
+            
             text = result["text"].strip()
+            confidence = result.get("confidence", 0)
+            
+            print(f"📊 اطمینان تشخیص: {confidence}")
+            print(f"🗣️ زبان تشخیص داده شده: {result.get('language', 'نامشخص')}")
             
             if text:
                 print(f"✅ متن تشخیص داده شده: {text}")
@@ -118,6 +150,8 @@ class SpeechHandler:
                 
         except Exception as e:
             print(f"❌ خطا در تحلیل فایل صوتی: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     async def _transcribe_bytes(self, audio_data: bytes) -> Optional[str]:
