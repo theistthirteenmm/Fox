@@ -353,51 +353,111 @@ const MessageInput: React.FC<MessageInputProps> = ({
   // باقی توابع (startRecording, stopRecording, etc.) مثل قبل...
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      console.log('🎤 درخواست دسترسی به میکروفون...');
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100
+        } 
+      });
+      
+      console.log('✅ دسترسی به میکروفون موفق');
+      
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
+      
       mediaRecorderRef.current = mediaRecorder;
       const audioChunks: Blob[] = [];
 
       mediaRecorder.ondataavailable = (event) => {
+        console.log('📊 داده صوتی دریافت شد:', event.data.size, 'bytes');
         if (event.data.size > 0) {
           audioChunks.push(event.data);
         }
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        console.log('⏹️ ضبط متوقف شد. تعداد chunks:', audioChunks.length);
+        
+        if (audioChunks.length === 0) {
+          setRecordingStatus('❌ هیچ صدایی ضبط نشد');
+          setTimeout(() => setRecordingStatus(''), 3000);
+          return;
+        }
+        
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
+        console.log('🎵 فایل صوتی ساخته شد:', audioBlob.size, 'bytes');
+        
+        if (audioBlob.size < 1000) {
+          setRecordingStatus('❌ فایل صوتی خیلی کوچک است');
+          setTimeout(() => setRecordingStatus(''), 3000);
+          return;
+        }
+        
         const formData = new FormData();
-        formData.append('audio_file', audioBlob, 'recording.wav');
+        formData.append('audio_file', audioBlob, 'recording.webm');
 
         try {
+          setRecordingStatus('🔄 در حال تبدیل صدا به متن...');
+          
           const response = await fetch('http://localhost:8000/speech/speech-to-text', {
             method: 'POST',
             body: formData,
           });
 
+          console.log('📡 پاسخ سرور:', response.status);
           const result = await response.json();
+          console.log('📝 نتیجه:', result);
           
-          if (result.success && result.text) {
+          if (result.success && result.text && result.text.trim()) {
             setMessage(result.text);
             setRecordingStatus('✅ صدا تبدیل شد');
           } else {
-            setRecordingStatus('❌ متنی تشخیص داده نشد');
+            setRecordingStatus('❌ متنی تشخیص داده نشد - لطفاً واضح‌تر صحبت کنید');
           }
         } catch (error) {
-          setRecordingStatus('❌ خطا در تبدیل صدا');
+          console.error('❌ خطا در تبدیل صدا:', error);
+          setRecordingStatus('❌ خطا در تبدیل صدا به متن');
         }
 
         stream.getTracks().forEach(track => track.stop());
+        setTimeout(() => setRecordingStatus(''), 5000);
+      };
+
+      mediaRecorder.onerror = (event) => {
+        console.error('❌ خطا در ضبط:', event);
+        setRecordingStatus('❌ خطا در ضبط صدا');
         setTimeout(() => setRecordingStatus(''), 3000);
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(1000); // ضبط هر 1 ثانیه یک chunk
       setIsRecording(true);
-      setRecordingStatus('🎤 در حال ضبط...');
+      setRecordingStatus('🎤 در حال ضبط... (حداکثر 10 ثانیه)');
+      
+      // توقف خودکار بعد از 10 ثانیه
+      setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          stopRecording();
+        }
+      }, 10000);
 
     } catch (error) {
-      setRecordingStatus('❌ دسترسی به میکروفون امکان‌پذیر نیست');
-      setTimeout(() => setRecordingStatus(''), 3000);
+      console.error('❌ خطا در دسترسی به میکروفون:', error);
+      
+      if (error.name === 'NotAllowedError') {
+        setRecordingStatus('❌ دسترسی به میکروفون رد شد - لطفاً مجوز دهید');
+      } else if (error.name === 'NotFoundError') {
+        setRecordingStatus('❌ میکروفون یافت نشد');
+      } else if (error.name === 'NotSupportedError') {
+        setRecordingStatus('❌ مرورگر از ضبط صدا پشتیبانی نمی‌کند');
+      } else {
+        setRecordingStatus('❌ خطا در دسترسی به میکروفون: ' + error.message);
+      }
+      
+      setTimeout(() => setRecordingStatus(''), 5000);
     }
   };
 

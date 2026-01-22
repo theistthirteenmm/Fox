@@ -22,7 +22,7 @@ class SpeechHandler:
         self.is_initialized = False
         
         # تنظیمات
-        self.supported_formats = ['.wav', '.mp3', '.m4a', '.ogg', '.flac']
+        self.supported_formats = ['.wav', '.mp3', '.m4a', '.ogg', '.flac', '.webm', '.opus']
         self.temp_dir = Path("data/temp/audio")
         self.temp_dir.mkdir(parents=True, exist_ok=True)
         
@@ -205,7 +205,8 @@ class SpeechHandler:
     
     def is_audio_file(self, filename: str) -> bool:
         """بررسی فرمت فایل صوتی"""
-        return Path(filename).suffix.lower() in self.supported_formats
+        supported_extensions = ['.wav', '.mp3', '.m4a', '.ogg', '.flac', '.webm', '.opus']
+        return Path(filename).suffix.lower() in supported_extensions
     
     async def get_audio_info(self, audio_file: str) -> Dict[str, Any]:
         """اطلاعات فایل صوتی"""

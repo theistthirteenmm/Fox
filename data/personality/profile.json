@@ -1,8 +1,8 @@
 {
   "birth_date": "2026-01-18T13:11:57.665942",
   "development_level": 5,
-  "experience_points": 46,
-  "total_interactions": 46,
+  "experience_points": 48,
+  "total_interactions": 48,
   "favorite_topics": [
     "برنامه‌نویسی",
     "علم"
@@ -38,7 +38,7 @@
     "formality": 0.4,
     "creativity": 0.6,
     "patience": 0.7,
-    "enthusiasm": 0.51
+    "enthusiasm": 0.5
   },
-  "last_updated": "2026-01-21T14:44:40.368264"
+  "last_updated": "2026-01-22T09:28:38.349205"
 }

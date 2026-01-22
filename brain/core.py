@@ -14,6 +14,7 @@ import random
 from .web_search import WebSearchEngine
 from .dataset_manager import DatasetManager
 from .code_analyzer import code_analyzer
+from .user_profiler import user_profiler
 
 class AIBrain:
     def __init__(self):
@@ -101,6 +102,10 @@ class AIBrain:
         # بررسی وجود کد در پیام
         code_analysis = self.analyze_user_code(message)
         
+        # تحلیل کاربر و به‌روزرسانی پروفایل
+        user_analysis = user_profiler.analyze_message(message)
+        user_profiler.update_profile(message, user_analysis)
+        
         # تحلیل پیام کاربر
         analysis = self.dataset_manager.analyze_user_message(message, context)
         print(f"🔍 تحلیل پیام: {analysis}")
@@ -132,6 +137,11 @@ class AIBrain:
         if code_analysis:
             code_prompt = self._build_code_analysis_prompt(code_analysis)
             enhanced_prompt += f"\n\n{code_prompt}"
+        
+        # اضافه کردن context شخصی‌سازی شده
+        personalized_context = user_profiler.get_personalized_context()
+        if personalized_context:
+            enhanced_prompt += f"\n\nاطلاعات شخصی کاربر:\n{personalized_context}\n"
         
         # اضافه کردن اطلاعات وب به prompt
         if web_info and web_info.get('summary'):

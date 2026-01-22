@@ -342,6 +342,62 @@ async def get_dashboard_data():
     except Exception as e:
         return {"error": f"خطا در دریافت داده‌های داشبورد: {str(e)}"}
 
+# 👤 User Profile API Endpoints
+@app.get("/user/profile")
+async def get_user_profile():
+    """دریافت پروفایل کاربر"""
+    try:
+        from brain.user_profiler import user_profiler
+        
+        insights = user_profiler.get_relationship_insights()
+        
+        return {
+            "success": True,
+            "profile": insights,
+            "message": "پروفایل کاربر دریافت شد"
+        }
+        
+    except Exception as e:
+        return {"error": f"خطا در دریافت پروفایل: {str(e)}"}
+
+@app.get("/user/relationship")
+async def get_relationship_status():
+    """وضعیت رابطه با کاربر"""
+    try:
+        from brain.user_profiler import user_profiler
+        
+        insights = user_profiler.get_relationship_insights()
+        
+        # تعیین وضعیت رابطه
+        level = insights["relationship_level"]
+        if level < 2:
+            status = "تازه آشنا"
+            description = "هنوز در حال آشنایی هستیم"
+        elif level < 4:
+            status = "دوست"
+            description = "رابطه دوستانه‌ای داریم"
+        elif level < 7:
+            status = "دوست نزدیک"
+            description = "به هم نزدیک شده‌ایم"
+        elif level < 9:
+            status = "رفیق خوب"
+            description = "رفیق‌های خوبی هستیم"
+        else:
+            status = "رفیق صمیمی"
+            description = "رابطه بسیار صمیمانه‌ای داریم"
+        
+        return {
+            "relationship_status": status,
+            "description": description,
+            "level": level,
+            "trust_score": insights["trust_score"],
+            "total_interactions": insights["total_interactions"],
+            "favorite_topics": insights["favorite_topics"]
+        }
+        
+    except Exception as e:
+        return {"error": f"خطا در دریافت وضعیت رابطه: {str(e)}"}
+
 # 💻 Code Analysis API Endpoints
 @app.post("/code/analyze")
 async def analyze_code(code: str = Form(...), language: str = Form(None)):
