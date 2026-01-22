@@ -1,12 +1,13 @@
 {
   "birth_date": "2026-01-18T13:11:57.665942",
-  "development_level": 7,
-  "experience_points": 63,
-  "total_interactions": 63,
+  "development_level": 10,
+  "experience_points": 90,
+  "total_interactions": 90,
   "favorite_topics": [
     "برنامه‌نویسی",
     "علم",
-    "سفر"
+    "سفر",
+    "هنر"
   ],
   "learned_preferences": {},
   "growth_milestones": [
@@ -39,17 +40,32 @@
       "level": 7,
       "date": "2026-01-22T11:09:16.812670",
       "interactions_count": 60
+    },
+    {
+      "level": 8,
+      "date": "2026-01-22T11:33:13.881601",
+      "interactions_count": 70
+    },
+    {
+      "level": 9,
+      "date": "2026-01-22T11:45:13.580733",
+      "interactions_count": 80
+    },
+    {
+      "level": 10,
+      "date": "2026-01-22T12:30:54.459139",
+      "interactions_count": 90
     }
   ],
   "personality_traits": {
-    "curiosity": 0.5,
-    "friendliness": 0.8,
-    "helpfulness": 0.9,
-    "humor": 0.3,
-    "formality": 0.4,
-    "creativity": 0.6,
-    "patience": 0.7,
-    "enthusiasm": 0.5
+    "curiosity": 0.55,
+    "friendliness": 0.8500000000000001,
+    "helpfulness": 0.9500000000000001,
+    "humor": 0.35,
+    "formality": 0.45,
+    "creativity": 0.65,
+    "patience": 0.75,
+    "enthusiasm": 0.55
   },
-  "last_updated": "2026-01-22T11:24:02.310126"
+  "last_updated": "2026-01-22T12:30:54.459139"
 }

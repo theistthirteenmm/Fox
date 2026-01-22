@@ -31,6 +31,11 @@ class AIBrain:
         # سیستم دیتاست و پرامپت
         self.dataset_manager = DatasetManager()
         
+        # سیستم ردیابی مکالمه
+        self.current_conversation_topic = None
+        self.conversation_context_window = 10  # نگه‌داری آخرین 10 پیام
+        self.topic_continuity_threshold = 3  # حداقل 3 پیام برای تشخیص موضوع مداوم
+        
     def is_loaded(self) -> bool:
         """بررسی آماده بودن مدل"""
         try:
@@ -92,7 +97,7 @@ class AIBrain:
             print(f"خطا در دانلود مدل: {e}")
     
     async def generate_response(self, message: str, context: List[Dict] = None, personality: Dict = None, thinking_callback=None) -> str:
-        """تولید پاسخ با رویکرد جدید: AI اول، بعد بهبود با dataset"""
+        """تولید پاسخ با رویکرد جدید: AI اول، بعد بهبود با dataset + Context Awareness"""
         
         # نمایش پیام ساده thinking
         if thinking_callback:
@@ -103,13 +108,39 @@ class AIBrain:
             print("🔄 مدل بارگذاری نشده، در حال راه‌اندازی...")
             await self.initialize_model()
         
-        # مرحله 1: تحلیل اولیه پیام
-        print("🔍 مرحله 1: تحلیل پیام کاربر...")
+        # مرحله 1: تحلیل اولیه پیام و context
+        print("🔍 مرحله 1: تحلیل پیام و context مکالمه...")
+        
+        # تشخیص موضوع فعلی و ارتباط با مکالمه قبلی
+        conversation_topic = self._detect_conversation_topic(message, context)
+        topic_continuity = self._check_topic_continuity(conversation_topic, context)
+        
+        print(f"📋 موضوع مکالمه: {conversation_topic}")
+        print(f"🔗 ادامه موضوع قبلی: {'بله' if topic_continuity else 'خیر'}")
+        
+        # به‌روزرسانی موضوع فعلی مکالمه
+        if topic_continuity:
+            print(f"✅ ادامه مکالمه درباره: {self.current_conversation_topic}")
+        else:
+            # اگر درخواست تغییر موضوع بود، context رو محدود کن
+            if self._is_topic_change_request(message):
+                print("🔄 پاک کردن context قدیمی برای موضوع جدید")
+                # فقط آخرین پیام رو نگه دار
+                context = context[-1:] if context else []
+            
+            self.current_conversation_topic = conversation_topic
+            print(f"🆕 شروع موضوع جدید: {conversation_topic}")
+        
         code_analysis = self.analyze_user_code(message)
         user_analysis = user_profiler.analyze_message(message)
         user_profiler.update_profile(message, user_analysis)
         analysis = self.dataset_manager.analyze_user_message(message, context)
-        print(f"� تحلیل: {analysis}")
+        
+        # اضافه کردن اطلاعات موضوع به تحلیل
+        analysis['conversation_topic'] = self.current_conversation_topic
+        analysis['topic_continuity'] = topic_continuity
+        
+        print(f"📊 تحلیل: {analysis}")
         
         # مرحله 2: جستجوی وب (اگر نیاز باشه)
         web_info = None
@@ -118,7 +149,7 @@ class AIBrain:
                 print("🌐 مرحله 2: جستجوی اطلاعات از اینترنت...")
                 web_info = await self.web_search.search_and_summarize(message)
         
-        # مرحله 3: تولید پاسخ اولیه توسط AI مدل
+        # مرحله 3: تولید پاسخ اولیه توسط AI مدل با context بهبود یافته
         print("🤖 مرحله 3: تولید پاسخ اولیه توسط مدل AI...")
         initial_prompt = self._build_initial_prompt(message, context, personality, web_info, code_analysis)
         initial_response = await self._generate_raw(initial_prompt, thinking_callback)
@@ -460,13 +491,20 @@ class AIBrain:
         }
     
     def _build_initial_prompt(self, message: str, context: List[Dict] = None, personality: Dict = None, web_info: Dict = None, code_analysis: Dict = None) -> str:
-        """ساخت prompt اولیه برای مدل AI"""
+        """ساخت prompt اولیه برای مدل AI با context قوی‌تر"""
         
         system_prompt = """تو روباه هستی، یک دستیار هوش مصنوعی فارسی که:
 - همیشه به فارسی پاسخ می‌دهی
 - دوستانه و مفید هستی
-- پاسخ‌هایت کوتاه و مفید باشند (حداکثر 3-4 جمله)
-- مستقیم به سؤال جواب می‌دهی"""
+- مکالمه قبلی را به خاطر داری و در ادامه آن پاسخ می‌دهی
+- اگر سؤال مربوط به موضوع قبلی است، حتماً به آن اشاره کن
+- پاسخ‌هایت کوتاه و مفید باشند (حداکثر 3-4 جمله)"""
+        
+        # ساخت context قوی‌تر از مکالمه
+        conversation_context = self._build_conversation_context(context)
+        
+        # تشخیص موضوع فعلی مکالمه
+        current_topic = self._detect_conversation_topic(message, context)
         
         # اضافه کردن اطلاعات وب
         web_text = ""
@@ -478,18 +516,11 @@ class AIBrain:
         if code_analysis:
             code_text = f"\n\nتحلیل کد:\n{self._build_code_analysis_prompt(code_analysis)}\n"
         
-        # اضافه کردن context کوتاه
-        context_text = ""
-        if context:
-            recent_context = context[-2:]
-            if recent_context:
-                context_text = "\n\nمکالمه قبلی:\n"
-                for item in recent_context:
-                    content = item.get('content', '')[:100]
-                    context_text += f"- {content}\n"
-        
         prompt = f"""{system_prompt}
-{context_text}
+
+{conversation_context}
+
+موضوع فعلی مکالمه: {current_topic}
 {web_text}
 {code_text}
 
@@ -497,6 +528,322 @@ class AIBrain:
 روباه:"""
         
         return prompt
+    
+    def _build_conversation_context(self, context: List[Dict] = None) -> str:
+        """ساخت context قوی‌تر از مکالمه"""
+        if not context or len(context) == 0:
+            return "مکالمه جدید شروع شده است."
+        
+        # اگر context خیلی کم باشه (درخواست تغییر موضوع)
+        if len(context) <= 1:
+            return "موضوع جدید شروع شده است."
+        
+        # گرفتن آخرین 6 پیام (3 جفت سؤال و جواب)
+        recent_messages = context[-6:] if len(context) >= 6 else context
+        
+        conversation_text = "تاریخچه مکالمه:\n"
+        
+        for i, item in enumerate(recent_messages):
+            role = "کاربر" if item.get('role') == 'user' else "روباه"
+            content = item.get('content', '')
+            
+            # محدود کردن طول هر پیام
+            if len(content) > 150:
+                content = content[:150] + "..."
+            
+            conversation_text += f"{role}: {content}\n"
+        
+        # تشخیص الگوی مکالمه
+        conversation_pattern = self._analyze_conversation_pattern(recent_messages)
+        if conversation_pattern:
+            conversation_text += f"\nالگوی مکالمه: {conversation_pattern}\n"
+        
+        return conversation_text
+    
+    def _detect_conversation_topic(self, current_message: str, context: List[Dict] = None) -> str:
+        """تشخیص موضوع فعلی مکالمه - داینامیک و یادگیرنده"""
+        
+        # بررسی درخواست تغییر موضوع
+        if self._is_topic_change_request(current_message):
+            print("🔄 درخواست تغییر موضوع تشخیص داده شد")
+            # پاک کردن موضوع فعلی
+            self.current_conversation_topic = None
+            # استخراج موضوع جدید از پیام
+            new_topic = self._extract_dynamic_topic(current_message)
+            return new_topic if new_topic != "مکالمه عمومی" else "موضوع جدید"
+        
+        # اگر context نداریم، موضوع رو از پیام فعلی استخراج کن
+        if not context or len(context) == 0:
+            return self._extract_dynamic_topic(current_message)
+        
+        # ابتدا موضوع پیام فعلی رو بررسی کن (نه کل context)
+        current_topic_from_message = self._extract_dynamic_topic(current_message)
+        
+        # بررسی موضوع از یادگیری شده‌ها
+        learned_topic = self._detect_learned_topic(current_message)
+        if learned_topic:
+            return learned_topic
+        
+        # بررسی موضوع از موضوعات پایه
+        static_topic = self._detect_static_topic(current_message)
+        if static_topic != "مکالمه عمومی":
+            return static_topic
+        
+        # اگر هیچ موضوع شناخته شده‌ای پیدا نشد، موضوع جدید استخراج کن
+        new_topic = current_topic_from_message
+        
+        # موضوع جدید رو یاد بگیر
+        if new_topic != "مکالمه عمومی":
+            self._learn_new_topic(new_topic, current_message)
+        
+        return new_topic
+    
+    def _detect_static_topic(self, text: str) -> str:
+        """تشخیص موضوع از موضوعات پایه"""
+        text_lower = text.lower()
+        
+        # کلمات کلیدی موضوعات پایه
+        static_topics = {
+            "ورزش": ["فوتبال", "بسکتبال", "والیبال", "تنیس", "شنا", "بازی", "مسابقه", "تیم", "ورزشکار", "گل", "امتیاز"],
+            "موسیقی": ["آهنگ", "خواننده", "ساز", "موزیک", "کنسرت", "آلبوم", "ترانه", "نوازنده"],
+            "برنامه‌نویسی": ["کد", "برنامه", "python", "javascript", "html", "css", "function", "variable", "loop", "تابع", "متغیر"],
+            "آب و هوا": ["دما", "هوا", "بارش", "باران", "برف", "آفتابی", "ابری", "گرما", "سرما", "هواشناسی"],
+            "آشپزی": ["غذا", "پخت", "دستور", "مواد", "طبخ", "آشپزی", "خوراک", "طعام"],
+            "سفر": ["سفر", "مسافرت", "شهر", "کشور", "هتل", "بلیط", "گردشگری", "جاهای دیدنی"],
+            "تکنولوژی": ["کامپیوتر", "موبایل", "اپلیکیشن", "نرم‌افزار", "هوش مصنوعی", "AI", "فناوری"],
+            "سلامتی": ["سلامت", "بیماری", "دکتر", "دارو", "ورزش", "تغذیه", "بهداشت"],
+            "تحصیل": ["درس", "دانشگاه", "مدرسه", "امتحان", "یادگیری", "کتاب", "مطالعه"]
+        }
+        
+        # امتیازدهی به هر موضوع
+        topic_scores = {}
+        for topic, keywords in static_topics.items():
+            score = sum(1 for keyword in keywords if keyword in text_lower)
+            if score > 0:
+                topic_scores[topic] = score
+        
+        # انتخاب موضوع با بالاترین امتیاز
+        if topic_scores:
+            best_topic = max(topic_scores, key=topic_scores.get)
+            return best_topic
+        
+        return "مکالمه عمومی"
+    
+    def _detect_learned_topic(self, text: str) -> Optional[str]:
+        """تشخیص موضوع از موضوعات یادگیری شده"""
+        learned_topics = self._load_learned_topics()
+        
+        if not learned_topics:
+            return None
+        
+        text_lower = text.lower()
+        best_topic = None
+        best_score = 0
+        
+        for topic_name, topic_data in learned_topics.items():
+            keywords = topic_data.get('keywords', [])
+            score = sum(1 for keyword in keywords if keyword in text_lower)
+            
+            if score > best_score:
+                best_score = score
+                best_topic = topic_name
+        
+        # حداقل 2 کلمه مطابقت داشته باشه
+        return best_topic if best_score >= 2 else None
+    
+    def _extract_dynamic_topic(self, text: str) -> str:
+        """استخراج موضوع جدید از متن به صورت داینامیک"""
+        import re
+        
+        text_lower = text.lower()
+        
+        # حذف کلمات رایج و غیرمفید
+        stop_words = [
+            "من", "تو", "او", "ما", "شما", "آن‌ها", "این", "آن", "که", "را", "به", "از", "در", "با", "برای",
+            "و", "یا", "اما", "چون", "اگر", "وقتی", "کجا", "چه", "چرا", "چطور", "کی", "چند", "چقدر",
+            "می‌خوام", "می‌تونم", "می‌شه", "باید", "نباید", "دارم", "ندارم", "هست", "نیست",
+            "خیلی", "کمی", "زیاد", "کم", "بیشتر", "کمتر", "همه", "هیچ", "یک", "دو", "سه",
+            "سلام", "درود", "بیا", "درباره", "حرف", "بزنیم", "صحبت", "کنیم", "آیا", "کدام",
+            "دوست", "داری", "آخرین", "گوش", "دادی", "بود", "چی", "سؤال", "دارم", "یاد", "بگیرم"
+        ]
+        
+        # استخراج کلمات مهم (اسامی، صفات، افعال مهم)
+        words = re.findall(r'[آ-ی]+', text_lower)
+        important_words = [word for word in words if len(word) > 3 and word not in stop_words]
+        
+        if not important_words:
+            return "مکالمه عمومی"
+        
+        # جستجوی کلمات کلیدی موضوعات شناخته شده
+        topic_indicators = {
+            "فوتبال": "ورزش", "بسکتبال": "ورزش", "والیبال": "ورزش", "تنیس": "ورزش", "شنا": "ورزش",
+            "بازی": "ورزش", "مسابقه": "ورزش", "تیم": "ورزش", "ورزشکار": "ورزش",
+            
+            "آهنگ": "موسیقی", "موزیک": "موسیقی", "ساز": "موسیقی", "خواننده": "موسیقی",
+            "کنسرت": "موسیقی", "آلبوم": "موسیقی", "ترانه": "موسیقی", "نوازنده": "موسیقی",
+            
+            "فیلم": "سینما", "سریال": "سینما", "بازیگر": "سینما", "کارگردان": "سینما",
+            "سینما": "سینما", "نمایش": "سینما",
+            
+            "python": "برنامه‌نویسی", "javascript": "برنامه‌نویسی", "کد": "برنامه‌نویسی",
+            "برنامه": "برنامه‌نویسی", "تابع": "برنامه‌نویسی", "متغیر": "برنامه‌نویسی",
+            
+            "غذا": "آشپزی", "پخت": "آشپزی", "آشپزی": "آشپزی", "طبخ": "آشپزی",
+            "خوراک": "آشپزی", "طعام": "آشپزی", "دستور": "آشپزی",
+            
+            "سفر": "سفر", "مسافرت": "سفر", "گردشگری": "سفر", "هتل": "سفر",
+            "بلیط": "سفر", "شهر": "سفر", "کشور": "سفر"
+        }
+        
+        # بررسی کلمات مهم برای تشخیص موضوع
+        for word in important_words:
+            if word in topic_indicators:
+                return topic_indicators[word]
+        
+        # اگر موضوع مشخصی پیدا نشد، از اولین کلمه مهم استفاده کن
+        if important_words:
+            first_important = important_words[0]
+            # تبدیل به موضوع مناسب
+            return self._normalize_topic_name(first_important, important_words[:3])
+        
+        return "مکالمه عمومی"
+    
+    def _normalize_topic_name(self, main_word: str, context_words: List[str]) -> str:
+        """تبدیل کلمه اصلی به نام موضوع مناسب"""
+        
+        # قوانین تبدیل کلمات به موضوع
+        topic_mappings = {
+            # ورزش
+            "فوتبال": "ورزش", "بسکتبال": "ورزش", "والیبال": "ورزش", "تنیس": "ورزش", "شنا": "ورزش",
+            "بازی": "ورزش", "مسابقه": "ورزش", "تیم": "ورزش", "ورزشکار": "ورزش",
+            # موسیقی
+            "آهنگ": "موسیقی", "موزیک": "موسیقی", "ساز": "موسیقی", "خواننده": "موسیقی",
+            "کنسرت": "موسیقی", "آلبوم": "موسیقی", "ترانه": "موسیقی", "نوازنده": "موسیقی",
+            # فیلم و سینما
+            "فیلم": "سینما", "سریال": "سینما", "بازیگر": "سینما", "کارگردان": "سینما",
+            "سینما": "سینما", "نمایش": "سینما",
+            # کتاب و ادبیات
+            "کتاب": "ادبیات", "رمان": "ادبیات", "شعر": "ادبیات", "نویسنده": "ادبیات",
+            # خرید
+            "خرید": "خرید", "فروشگاه": "خرید", "قیمت": "خرید", "پول": "خرید",
+            # کار و شغل
+            "کار": "شغل", "شرکت": "شغل", "مدیر": "شغل", "حقوق": "شغل", "استخدام": "شغل",
+            # برنامه‌نویسی
+            "python": "برنامه‌نویسی", "javascript": "برنامه‌نویسی", "کد": "برنامه‌نویسی",
+            "برنامه": "برنامه‌نویسی", "تابع": "برنامه‌نویسی", "متغیر": "برنامه‌نویسی"
+        }
+        
+        # بررسی mapping مستقیم
+        if main_word in topic_mappings:
+            return topic_mappings[main_word]
+        
+        # بررسی کلمات context
+        for word in context_words:
+            if word in topic_mappings:
+                return topic_mappings[word]
+        
+        # اگر mapping پیدا نشد، موضوع عمومی برگردان
+        return "مکالمه عمومی"
+    
+    def _learn_new_topic(self, topic_name: str, text: str):
+        """یادگیری موضوع جدید"""
+        if topic_name == "مکالمه عمومی":
+            return
+        
+        # استخراج کلمات کلیدی از متن
+        import re
+        
+        text_lower = text.lower()
+        stop_words = [
+            "من", "تو", "او", "ما", "شما", "آن‌ها", "این", "آن", "که", "را", "به", "از", "در", "با", "برای",
+            "و", "یا", "اما", "چون", "اگر", "وقتی", "کجا", "چه", "چرا", "چطور", "کی", "چند", "چقدر"
+        ]
+        
+        words = re.findall(r'[آ-ی]+', text_lower)
+        keywords = [word for word in words if len(word) > 2 and word not in stop_words]
+        
+        # بارگذاری موضوعات یادگیری شده
+        learned_topics = self._load_learned_topics()
+        
+        # اگر موضوع وجود داره، کلمات جدید اضافه کن
+        if topic_name in learned_topics:
+            existing_keywords = set(learned_topics[topic_name]['keywords'])
+            new_keywords = set(keywords)
+            combined_keywords = list(existing_keywords.union(new_keywords))
+            learned_topics[topic_name]['keywords'] = combined_keywords
+            learned_topics[topic_name]['usage_count'] += 1
+        else:
+            # موضوع جدید ایجاد کن
+            learned_topics[topic_name] = {
+                'keywords': keywords[:10],  # حداکثر 10 کلمه کلیدی
+                'created_at': datetime.now().isoformat(),
+                'usage_count': 1
+            }
+        
+        # ذخیره موضوعات یادگیری شده
+        self._save_learned_topics(learned_topics)
+        
+        print(f"🧠 موضوع جدید یاد گرفته شد: {topic_name} با {len(keywords)} کلمه کلیدی")
+    
+    def _load_learned_topics(self) -> Dict:
+        """بارگذاری موضوعات یادگیری شده"""
+        topics_file = "data/learning/learned_topics.json"
+        
+        if os.path.exists(topics_file):
+            try:
+                with open(topics_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except:
+                return {}
+        
+        return {}
+    
+    def _save_learned_topics(self, topics: Dict):
+        """ذخیره موضوعات یادگیری شده"""
+        topics_file = "data/learning/learned_topics.json"
+        os.makedirs("data/learning", exist_ok=True)
+        
+        with open(topics_file, "w", encoding="utf-8") as f:
+            json.dump(topics, f, ensure_ascii=False, indent=2)
+    
+    def _extract_topic_from_message(self, message: str) -> str:
+        """استخراج موضوع از یک پیام"""
+        message_lower = message.lower()
+        
+        if any(word in message_lower for word in ["کد", "برنامه", "python", "javascript"]):
+            return "برنامه‌نویسی"
+        elif any(word in message_lower for word in ["دما", "هوا", "بارش"]):
+            return "آب و هوا"
+        elif any(word in message_lower for word in ["غذا", "پخت", "آشپزی"]):
+            return "آشپزی"
+        elif any(word in message_lower for word in ["سفر", "مسافرت", "شهر"]):
+            return "سفر"
+        elif any(word in message_lower for word in ["کامپیوتر", "موبایل", "اپلیکیشن"]):
+            return "تکنولوژی"
+        else:
+            return "مکالمه عمومی"
+    
+    def _analyze_conversation_pattern(self, messages: List[Dict]) -> str:
+        """تحلیل الگوی مکالمه"""
+        if len(messages) < 2:
+            return None
+        
+        # بررسی الگوهای مختلف
+        user_messages = [msg for msg in messages if msg.get('role') == 'user']
+        
+        if len(user_messages) >= 2:
+            # بررسی سؤالات پی در پی
+            questions = sum(1 for msg in user_messages if '؟' in msg.get('content', ''))
+            if questions >= 2:
+                return "سؤال و پاسخ متوالی"
+            
+            # بررسی درخواست توضیح بیشتر
+            follow_up_words = ["بیشتر", "توضیح", "ادامه", "چطور", "چرا", "مثال"]
+            last_message = user_messages[-1].get('content', '').lower()
+            if any(word in last_message for word in follow_up_words):
+                return "درخواست توضیح بیشتر"
+        
+        return "مکالمه عادی"
     
     async def _enhance_response_with_datasets(self, message: str, initial_response: str, analysis: Dict, web_info: Dict = None, code_analysis: Dict = None) -> str:
         """بهبود پاسخ اولیه با استفاده از dataset ها"""
@@ -703,3 +1050,111 @@ class AIBrain:
                 "الان مشکل دارم، اما خوشحالم که باهام حرف می‌زنی! 💙"
             ]
             return random.choice(responses)
+    def _is_topic_change_request(self, message: str) -> bool:
+        """تشخیص درخواست تغییر موضوع"""
+        message_lower = message.lower()
+        
+        # کلمات کلیدی تغییر موضوع
+        topic_change_keywords = [
+            "بی‌خیال", "بیخیال", "ولش کن", "ولش", "فراموش کن", "فراموشش کن",
+            "موضوع جدید", "موضوع تازه", "چیز جدید", "چیز تازه", "بحث جدید",
+            "شروع کنیم", "شروع کن", "بیا شروع", "از نو شروع", "تازه شروع",
+            "عوض کن", "تغییر بده", "بذار برویم", "بریم سراغ", "حالا بیا",
+            "دیگه نمی‌خوام", "دیگه نمیخوام", "کافیه", "بسه", "تمام",
+            "یه چیز دیگه", "یه چیز دیگر", "چیز دیگه", "چیز دیگر",
+            "موضوع دیگه", "موضوع دیگر", "بحث دیگه", "بحث دیگر"
+        ]
+        
+        # بررسی وجود کلمات کلیدی
+        for keyword in topic_change_keywords:
+            if keyword in message_lower:
+                return True
+        
+        # بررسی الگوهای جمله
+        change_patterns = [
+            "بی.*خیال.*موضوع",
+            "ولش.*کن.*بیا",
+            "موضوع.*جدید.*شروع",
+            "شروع.*کنیم.*چیز",
+            "بریم.*سراغ.*چیز",
+            "حالا.*بیا.*درباره"
+        ]
+        
+        import re
+        for pattern in change_patterns:
+            if re.search(pattern, message_lower):
+                return True
+        
+        return False
+    def _check_topic_continuity(self, current_topic: str, context: List[Dict] = None) -> bool:
+        """بررسی ادامه موضوع قبلی"""
+        if not context or len(context) < 2:
+            return False
+        
+        if not self.current_conversation_topic:
+            return False
+        
+        # بررسی درخواست تغییر موضوع در پیام فعلی
+        current_message = context[-1].get('content', '') if context else ""
+        if self._is_topic_change_request(current_message):
+            print("🔄 تغییر موضوع درخواست شده - ادامه موضوع قبلی: خیر")
+            return False
+        
+        # اگر موضوع فعلی با موضوع قبلی یکی باشه
+        if current_topic == self.current_conversation_topic:
+            return True
+        
+        # بررسی کلمات مرتبط در پیام فعلی (نه کل context)
+        
+        # اگر کلمات مرتبط با موضوع قبلی در پیام فعلی باشه
+        topic_keywords = self._get_topic_keywords(self.current_conversation_topic)
+        keyword_matches = sum(1 for keyword in topic_keywords if keyword in current_message.lower())
+        
+        # حداقل 1 کلمه مرتبط کافیه (نه 2)
+        return keyword_matches >= 1
+    
+    def _get_topic_keywords(self, topic: str) -> List[str]:
+        """دریافت کلمات کلیدی هر موضوع - از موضوعات یادگیری شده و پایه"""
+        
+        # ابتدا از موضوعات یادگیری شده بگیر
+        learned_topics = self._load_learned_topics()
+        if topic in learned_topics:
+            return learned_topics[topic]['keywords']
+        
+        # اگر در موضوعات یادگیری شده نبود، از موضوعات پایه بگیر
+        static_topic_keywords = {
+            "برنامه‌نویسی": ["کد", "برنامه", "python", "javascript", "html", "css", "function", "variable", "loop", "تابع", "متغیر"],
+            "آب و هوا": ["دما", "هوا", "بارش", "باران", "برف", "آفتابی", "ابری", "گرما", "سرما", "هواشناسی"],
+            "آشپزی": ["غذا", "پخت", "دستور", "مواد", "طبخ", "آشپزی", "خوراک", "طعام"],
+            "سفر": ["سفر", "مسافرت", "شهر", "کشور", "هتل", "بلیط", "گردشگری", "جاهای دیدنی"],
+            "تکنولوژی": ["کامپیوتر", "موبایل", "اپلیکیشن", "نرم‌افزار", "هوش مصنوعی", "AI", "فناوری"],
+            "سلامتی": ["سلامت", "بیماری", "دکتر", "دارو", "ورزش", "تغذیه", "بهداشت"],
+            "تحصیل": ["درس", "دانشگاه", "مدرسه", "امتحان", "یادگیری", "کتاب", "مطالعه"]
+        }
+        
+        return static_topic_keywords.get(topic, [])
+    def get_learned_topics_summary(self) -> Dict:
+        """دریافت خلاصه موضوعات یادگیری شده"""
+        learned_topics = self._load_learned_topics()
+        
+        summary = {
+            "total_topics": len(learned_topics),
+            "topics": {}
+        }
+        
+        for topic_name, topic_data in learned_topics.items():
+            summary["topics"][topic_name] = {
+                "keywords_count": len(topic_data.get('keywords', [])),
+                "usage_count": topic_data.get('usage_count', 0),
+                "created_at": topic_data.get('created_at', ''),
+                "sample_keywords": topic_data.get('keywords', [])[:5]  # نمایش 5 کلمه اول
+            }
+        
+        return summary
+    
+    def reset_learned_topics(self):
+        """پاک کردن تمام موضوعات یادگیری شده"""
+        topics_file = "data/learning/learned_topics.json"
+        if os.path.exists(topics_file):
+            os.remove(topics_file)
+        print("🗑️ تمام موضوعات یادگیری شده پاک شدند")
