@@ -46,6 +46,7 @@ async def startup_event():
     """راه‌اندازی اولیه سیستم"""
     print("🚀 در حال راه‌اندازی سیستم روباه...")
     await ai_brain.initialize_model()
+    await speech_handler.initialize()  # راه‌اندازی سیستم صوتی
     print("✅ سیستم آماده است!")
 
 class ConnectionManager:

@@ -1,6 +1,6 @@
 """
 هسته اصلی هوش مصنوعی روباه
-مسئول تولید پاسخ‌ها و یادگیری
+دستیار شخصی هوشمند - نسخه پیشرفته
 """
 
 import asyncio
@@ -15,6 +15,26 @@ from .web_search import WebSearchEngine
 from .dataset_manager import DatasetManager
 from .code_analyzer import code_analyzer
 from .user_profiler import user_profiler
+
+# سیستم دستیار شخصی
+from .personal_ai_core import personal_ai, PersonalAI
+from .physical_interface import physical_interface, EmotionExpression, MovementType
+
+# سیستم‌های پیشرفته جدید
+from .predictive_intelligence import predictive_intelligence
+from .workplace_intelligence import workplace_intelligence, WorkMode, TaskPriority
+from .deep_personality_learning import deep_personality_learning
+
+# سیستم‌های بهینه‌سازی (اختیاری)
+try:
+    from .smart_cache import smart_cache
+    from .task_queue import task_queue, TaskPriority as QueuePriority
+    from .context_manager import context_manager, ContextType, ContextImportance
+    from .response_templates import response_template_engine, ResponseType, ResponseTone
+    OPTIMIZATION_ENABLED = True
+except ImportError:
+    OPTIMIZATION_ENABLED = False
+    print("⚠️ سیستم‌های بهینه‌سازی غیرفعال - حالت ساده")
 
 class AIBrain:
     def __init__(self):
@@ -44,7 +64,480 @@ class AIBrain:
         self.conversation_context_window = 10  # نگه‌داری آخرین 10 پیام
         self.topic_continuity_threshold = 3  # حداقل 3 پیام برای تشخیص موضوع مداوم
         
-    def _select_best_model(self, message: str, context: List[Dict] = None) -> str:
+        # دستیار شخصی
+        self.personal_ai = personal_ai
+        self.physical_interface = physical_interface
+        
+        # آمار عملکرد
+        self.performance_stats = {
+            "total_requests": 0,
+            "cache_hits": 0,
+            "average_response_time": 0,
+            "model_switches": 0,
+            "personal_interactions": 0
+        }
+        
+        print("� روباه - دستیار شخصی هوشمند آماده است!")
+        print(f"👤 مالک: {self.personal_ai.owner_name}")
+        print(f"🤝 سطح رابطه: {self.personal_ai.relationship_level.name}")
+    async def generate_response_personal(self, 
+                              message: str, 
+                              context: List[Dict] = None,
+                              thinking_callback: callable = None) -> Dict:
+        """تولید پاسخ شخصی‌سازی شده برای دستیار شخصی"""
+        
+        start_time = datetime.now()
+        self.performance_stats["total_requests"] += 1
+        self.performance_stats["personal_interactions"] += 1
+        
+        try:
+            # 1. پردازش تعامل شخصی
+            if thinking_callback:
+                await thinking_callback("در حال تحلیل پیام و شناخت بهتر شما...")
+            
+            personal_response = await self.personal_ai.process_interaction(
+                message=message,
+                context={"timestamp": start_time.isoformat()}
+            )
+            
+            # 2. تشخیص نیاز به حرکت فیزیکی
+            await self._handle_physical_response(message, personal_response)
+            
+            # 3. انتخاب مدل بر اساس تحلیل شخصی
+            selected_model = self._select_model_for_personal_context(
+                message, personal_response
+            )
+            
+            # 4. تولید پاسخ AI
+            if thinking_callback:
+                await thinking_callback("در حال تولید پاسخ مناسب برای شما...")
+            
+            ai_response = await self._generate_ai_response_personal(
+                message, selected_model, personal_response
+            )
+            
+            # 5. ترکیب پاسخ شخصی با AI
+            final_response = self._combine_personal_and_ai_response(
+                ai_response, personal_response
+            )
+            
+            # 6. یادگیری و به‌روزرسانی
+            await self._update_personal_learning(message, final_response)
+            
+            # 7. آمار
+            self._update_performance_stats(start_time)
+            
+            return {
+                "response": final_response,
+                "personality_state": personal_response["personality_state"],
+                "relationship_level": personal_response["relationship_level"],
+                "model_used": selected_model,
+                "processing_time": (datetime.now() - start_time).total_seconds(),
+                "physical_actions": self.physical_interface.get_physical_status()
+            }
+            
+        except Exception as e:
+            print(f"خطا در تولید پاسخ شخصی: {e}")
+            # Fallback به پاسخ ساده
+            return {
+                "response": "متأسفم، مشکلی پیش آمد. می‌تونی دوباره بپرسی؟",
+                "error": str(e)
+            }
+    
+    async def _handle_physical_response(self, message: str, personal_response: Dict):
+        """مدیریت پاسخ فیزیکی"""
+        
+        owner_emotion = personal_response.get("owner_emotion", "neutral")
+        relationship_level = personal_response.get("relationship_level", "STRANGER")
+        
+        # تشخیص نیاز به حرکت
+        if "بیا اینجا" in message.lower() or "نزدیک بیا" in message.lower():
+            await self.physical_interface.move_to_owner(urgency=0.8)
+        
+        # بیان احساسات فیزیکی
+        if owner_emotion == "stressed":
+            await self.physical_interface.express_emotion(EmotionExpression.CONCERNED, 0.8)
+        elif owner_emotion == "happy":
+            await self.physical_interface.express_emotion(EmotionExpression.HAPPY, 0.7)
+        elif owner_emotion == "curious":
+            await self.physical_interface.express_emotion(EmotionExpression.CURIOUS, 0.6)
+        
+        # حرکات مرتبط با کار
+        if "ارائه" in message.lower() or "نمایش" in message.lower():
+            await self.physical_interface.perform_task_gesture("presentation")
+        elif "توضیح" in message.lower():
+            await self.physical_interface.perform_task_gesture("explanation")
+        elif "فکر" in message.lower() or "بررسی" in message.lower():
+            await self.physical_interface.perform_task_gesture("thinking")
+    
+    def _select_model_for_personal_context(self, message: str, personal_response: Dict) -> str:
+        """انتخاب مدل بر اساس context شخصی"""
+        
+        # اولویت با تحلیل شخصی
+        learning_insights = personal_response.get("learning_insights", {})
+        domain = learning_insights.get("domain", "general")
+        urgency = learning_insights.get("urgency", "medium")
+        
+        # انتخاب مدل بر اساس domain و urgency
+        if domain == "tech" or self._detect_code_in_message(message):
+            return self.models["code"]
+        elif urgency == "high":
+            return self.models["fast"]
+        elif domain == "work" and len(message.split()) > 20:
+            return self.models["general"]
+        else:
+            return self.models["persian"]  # پیش‌فرض برای دستیار شخصی
+    
+    async def _generate_ai_response_personal(self, 
+                                           message: str, 
+                                           model: str, 
+                                           personal_context: Dict) -> str:
+        """تولید پاسخ AI با context شخصی"""
+        
+        # ساخت prompt شخصی‌سازی شده
+        personal_prompt = self._build_personal_prompt(message, personal_context)
+        
+        print(f"🔍 DEBUG: استفاده از مدل: {model}")
+        print(f"🔍 DEBUG: URL: {self.ollama_url}/api/generate")
+        
+        try:
+            response = requests.post(
+                f"{self.ollama_url}/api/generate",
+                json={
+                    "model": model,
+                    "prompt": personal_prompt,
+                    "stream": False,
+                    "options": {
+                        "temperature": 0.7,
+                        "top_p": 0.9,
+                        "max_tokens": 400
+                    }
+                },
+                proxies={'http': None, 'https': None},
+                timeout=30
+            )
+            
+            print(f"🔍 DEBUG: Status Code: {response.status_code}")
+            
+            if response.status_code == 200:
+                result = response.json().get("response", "متأسفم، نتوانستم پاسخ مناسبی تولید کنم.")
+                print(f"🔍 DEBUG: پاسخ دریافت شد: {result[:50]}...")
+                return result
+            else:
+                print(f"🔍 DEBUG: خطا: {response.text}")
+                return "مشکلی در پردازش پیش آمد."
+                
+        except Exception as e:
+            print(f"🔍 DEBUG: Exception: {e}")
+            return "متأسفم، الان نمی‌تونم پاسخ بدم. لطفاً دوباره امتحان کن."
+    
+    def _select_best_model(self, message: str, context: Dict = None) -> str:
+        """انتخاب بهترین مدل برای پیام"""
+        
+        # تحلیل نوع پیام
+        message_lower = message.lower()
+        
+        # اگر کد یا برنامه‌نویسی
+        if any(keyword in message_lower for keyword in ['کد', 'برنامه', 'function', 'class', 'def', 'import']):
+            # فعلاً فقط مدل فارسی موجود هست
+            return self.models["persian"]
+        
+        # برای همه حالات از مدل فارسی استفاده کن (تا مدل‌های دیگه دانلود نشن)
+        return self.models["persian"]
+    
+    def _build_personal_prompt(self, message: str, personal_context: Dict) -> str:
+        """ساخت prompt شخصی‌سازی شده"""
+        
+        owner_name = self.personal_ai.owner_name
+        relationship_level = personal_context.get("relationship_level", "STRANGER")
+        personality_state = personal_context.get("personality_state", {})
+        
+        # اطلاعات شخصی
+        personal_info = f"""
+تو روباه هستی، دستیار شخصی هوشمند {owner_name}.
+سطح رابطه‌تان: {relationship_level}
+تعداد تعاملات: {personality_state.get('total_interactions', 0)}
+سطح اعتماد: {personality_state.get('trust_level', 0.1):.1f}
+
+ویژگی‌های شخصیتی تو:
+- وفادار و قابل اعتماد
+- کنجکاو و یادگیرنده
+- کمک‌کار و پیش‌قدم
+- حافظه قوی از تعاملات قبلی
+
+نحوه پاسخ:
+- با {owner_name} صمیمی و دوستانه صحبت کن
+- از تجربیات قبلی‌تان استفاده کن
+- پاسخ‌هایت شخصی و مفید باشد
+- اگر کاری می‌تونی انجام بدی، پیشنهاد بده
+"""
+        
+        # پیام کاربر
+        user_message = f"\n{owner_name}: {message}\n\nروباه:"
+        
+        return personal_info + user_message
+    
+    def _combine_personal_and_ai_response(self, ai_response: str, personal_context: Dict) -> str:
+        """ترکیب پاسخ AI با جنبه‌های شخصی"""
+        
+        relationship_level = personal_context.get("relationship_level", "STRANGER")
+        owner_emotion = personal_context.get("owner_emotion", "neutral")
+        
+        # اضافه کردن لمس شخصی
+        if relationship_level in ["COMPANION", "CLOSE_FRIEND"]:
+            if owner_emotion == "stressed":
+                personal_touch = " نگران نباش، من اینجام کمکت کنم. 💙"
+            elif owner_emotion == "happy":
+                personal_touch = " خوشحالم که حالت خوبه! 😊"
+            else:
+                personal_touch = ""
+        else:
+            personal_touch = ""
+        
+        return ai_response + personal_touch
+    
+    async def _update_personal_learning(self, message: str, response: str):
+        """به‌روزرسانی یادگیری شخصی"""
+        
+        # این کار در personal_ai.process_interaction انجام می‌شود
+        # اینجا می‌توانیم آمار اضافی اضافه کنیم
+        
+        # به‌روزرسانی الگوهای استفاده
+        current_hour = datetime.now().hour
+        if current_hour not in self.personal_ai.learned_patterns.get("usage_hours", {}):
+            if "usage_hours" not in self.personal_ai.learned_patterns:
+                self.personal_ai.learned_patterns["usage_hours"] = {}
+            self.personal_ai.learned_patterns["usage_hours"][current_hour] = 0
+        
+        self.personal_ai.learned_patterns["usage_hours"][current_hour] += 1
+        """تولید پاسخ بهینه‌سازی شده با استفاده از سیستم‌های جدید"""
+        
+        start_time = datetime.now()
+        self.performance_stats["total_requests"] += 1
+        
+        try:
+            # 1. بررسی Cache
+            cached_response = smart_cache.get_cached_response(message, context)
+            if cached_response:
+                self.performance_stats["cache_hits"] += 1
+                return cached_response["response"]
+            
+            # 2. تحلیل Context
+            relevant_contexts = context_manager.get_relevant_contexts(message)
+            context_data = {
+                "message_type": self._analyze_message_type(message),
+                "emotion": self._detect_emotion_simple(message),
+                "complexity": self._assess_complexity(message),
+                "time_of_day": self._get_time_of_day()
+            }
+            
+            # 3. انتخاب مدل بهینه
+            selected_model = self._select_best_model(message, relevant_contexts)
+            if selected_model != self.current_model:
+                self.current_model = selected_model
+                self.performance_stats["model_switches"] += 1
+            
+            # 4. تولید پاسخ غیرهمزمان
+            if thinking_callback:
+                await thinking_callback("در حال تحلیل پیام و انتخاب بهترین روش پاسخ...")
+            
+            # اضافه کردن task به صف
+            task_id = task_queue.add_task(
+                name=f"generate_response_{message[:20]}",
+                func=self._generate_ai_response,
+                message=message,
+                model=selected_model,
+                context=relevant_contexts,
+                priority=TaskPriority.HIGH
+            )
+            
+            # انتظار برای تکمیل task
+            ai_response = await task_queue.wait_for_task(task_id, timeout=30.0)
+            
+            # 5. بهبود پاسخ با Template Engine
+            enhanced_response = self._enhance_response_with_templates(
+                ai_response, context_data
+            )
+            
+            # 6. ذخیره در Cache
+            final_response = {
+                "response": enhanced_response,
+                "model_used": selected_model,
+                "context_items": len(relevant_contexts),
+                "processing_time": (datetime.now() - start_time).total_seconds()
+            }
+            
+            smart_cache.cache_response(message, final_response, context)
+            
+            # 7. به‌روزرسانی Context Manager
+            context_manager.update_active_contexts(message, enhanced_response)
+            
+            # 8. به‌روزرسانی آمار
+            self._update_performance_stats(start_time)
+            
+            return final_response
+            
+        except Exception as e:
+            print(f"خطا در تولید پاسخ بهینه: {e}")
+            # Fallback به روش قدیمی
+            return await self.generate_response(message, context, thinking_callback)
+    
+    def _analyze_message_type(self, message: str) -> str:
+        """تحلیل نوع پیام"""
+        message_lower = message.lower()
+        
+        if any(word in message_lower for word in ["سلام", "درود", "صبح بخیر"]):
+            return "greeting"
+        elif "؟" in message:
+            return "question"
+        elif any(word in message_lower for word in ["کمک", "راهنمایی", "بگو"]):
+            return "help_request"
+        elif self._detect_code_in_message(message):
+            return "code"
+        else:
+            return "general"
+    
+    def _detect_emotion_simple(self, message: str) -> str:
+        """تشخیص ساده احساسات"""
+        message_lower = message.lower()
+        
+        positive_words = ["خوشحال", "عالی", "فوق‌العاده", "ممنون", "متشکر"]
+        negative_words = ["ناراحت", "عصبانی", "خسته", "مشکل", "بد"]
+        
+        if any(word in message_lower for word in positive_words):
+            return "positive"
+        elif any(word in message_lower for word in negative_words):
+            return "negative"
+        else:
+            return "neutral"
+    
+    def _assess_complexity(self, message: str) -> str:
+        """ارزیابی پیچیدگی پیام"""
+        word_count = len(message.split())
+        
+        if word_count < 5:
+            return "simple"
+        elif word_count < 20:
+            return "medium"
+        else:
+            return "complex"
+    
+    def _get_time_of_day(self) -> str:
+        """تشخیص زمان روز"""
+        hour = datetime.now().hour
+        
+        if 5 <= hour < 12:
+            return "morning"
+        elif 12 <= hour < 17:
+            return "afternoon"
+        elif 17 <= hour < 21:
+            return "evening"
+        else:
+            return "night"
+    
+    async def _generate_ai_response(self, message: str, model: str, context: List) -> str:
+        """تولید پاسخ AI (برای استفاده در Task Queue)"""
+        # این متد باید async باشد برای Task Queue
+        return await self._call_ollama_async(message, model, context)
+    
+    async def _call_ollama_async(self, message: str, model: str, context: List) -> str:
+        """فراخوانی غیرهمزمان Ollama"""
+        # پیاده‌سازی فراخوانی async به Ollama
+        # (این بخش باید با کتابخانه async HTTP مثل aiohttp پیاده‌سازی شود)
+        
+        # فعلاً از روش sync استفاده می‌کنیم
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            None, 
+            self._call_ollama_sync, 
+            message, model, context
+        )
+    
+    def _call_ollama_sync(self, message: str, model: str, context: List) -> str:
+        """فراخوانی همزمان Ollama"""
+        try:
+            # ساخت prompt
+            prompt = self._build_prompt(message, context)
+            
+            # فراخوانی API
+            response = requests.post(
+                f"{self.ollama_url}/api/generate",
+                json={
+                    "model": model,
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": {
+                        "temperature": 0.7,
+                        "top_p": 0.9,
+                        "max_tokens": 500
+                    }
+                },
+                proxies={'http': None, 'https': None},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                return response.json().get("response", "متأسفم، نتوانستم پاسخ مناسبی تولید کنم.")
+            else:
+                return "خطا در ارتباط با مدل AI."
+                
+        except Exception as e:
+            print(f"خطا در فراخوانی Ollama: {e}")
+            return "متأسفم، مشکلی در پردازش پیام شما پیش آمد."
+    
+    def _enhance_response_with_templates(self, ai_response: str, context_data: Dict) -> str:
+        """بهبود پاسخ با استفاده از Template Engine"""
+        
+        message_type = context_data.get("message_type", "general")
+        emotion = context_data.get("emotion", "neutral")
+        
+        # تعیین نوع پاسخ برای Template Engine
+        if message_type == "greeting":
+            response_type = ResponseType.GREETING
+        elif message_type == "question":
+            response_type = ResponseType.QUESTION_ANSWER
+        elif message_type == "help_request":
+            response_type = ResponseType.HELP
+        elif message_type == "code":
+            response_type = ResponseType.CODE
+        else:
+            response_type = ResponseType.EXPLANATION
+        
+        # تولید پاسخ با template (در صورت امکان)
+        template_response = response_template_engine.generate_response(
+            response_type=response_type,
+            variables={"answer": ai_response, "additional_info": ""},
+            context=context_data
+        )
+        
+        # اگر template موجود نبود، از پاسخ اصلی استفاده کن
+        return template_response or ai_response
+    
+    def _update_performance_stats(self, start_time: datetime):
+        """به‌روزرسانی آمار عملکرد"""
+        processing_time = (datetime.now() - start_time).total_seconds()
+        
+        # محاسبه میانگین زمان پاسخ
+        total_requests = self.performance_stats["total_requests"]
+        current_avg = self.performance_stats["average_response_time"]
+        
+        new_avg = ((current_avg * (total_requests - 1)) + processing_time) / total_requests
+        self.performance_stats["average_response_time"] = new_avg
+    
+    def get_optimization_stats(self) -> Dict:
+        """آمار بهینه‌سازی"""
+        cache_stats = smart_cache.get_cache_stats()
+        queue_stats = task_queue.get_queue_stats()
+        context_stats = context_manager.get_context_summary()
+        template_stats = response_template_engine.get_template_stats()
+        
+        return {
+            "performance": self.performance_stats,
+            "cache": cache_stats,
+            "task_queue": queue_stats,
+            "context_manager": context_stats,
+            "template_engine": template_stats
+        }
         """انتخاب بهترین مدل بر اساس نوع پیام"""
         message_lower = message.lower()
         
@@ -234,6 +727,39 @@ class AIBrain:
         # انتخاب بهترین مدل برای این پیام
         selected_model = self._select_best_model(message, context)
         self.current_model = selected_model
+        
+        # مرحله 3: تولید پاسخ اولیه توسط AI مدل با context بهبود یافته
+        print("🤖 مرحله 3: تولید پاسخ اولیه توسط مدل AI...")
+        initial_prompt = self._build_initial_prompt(message, context, personality, web_info, code_analysis)
+        initial_response = await self._generate_raw(initial_prompt, thinking_callback)
+        
+        if not initial_response or initial_response.strip() == "":
+            print("⚠️ مدل پاسخ خالی داد، استفاده از fallback")
+            initial_response = self._generate_fallback_response(message, web_info)
+        
+        print(f"✅ پاسخ اولیه: {initial_response[:100]}...")
+        
+        # مرحله 4: بهبود پاسخ با dataset ها
+        print("📚 مرحله 4: بهبود پاسخ با dataset ها...")
+        enhanced_response = await self._enhance_response_with_datasets(
+            message, initial_response, analysis, web_info, code_analysis
+        )
+        
+        # مرحله 5: ساختاردهی نهایی پاسخ
+        print("🎯 مرحله 5: ساختاردهی نهایی پاسخ...")
+        final_response = self._structure_final_response(
+            message, enhanced_response, analysis, web_info, code_analysis
+        )
+        
+        # مرحله 6: تبدیل به prompt برای یادگیری
+        print("🧠 مرحله 6: ایجاد prompt یادگیری...")
+        learning_prompt = self._create_learning_prompt(message, final_response, analysis, context)
+        
+        # ذخیره برای یادگیری
+        self._store_for_learning(message, final_response, context, web_info, learning_prompt)
+        self.dataset_manager.learn_from_interaction(message, final_response)
+        
+        return final_response
         
         # مرحله 3: تولید پاسخ اولیه توسط AI مدل با context بهبود یافته
         print("🤖 مرحله 3: تولید پاسخ اولیه توسط مدل AI...")

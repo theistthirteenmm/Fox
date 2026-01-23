@@ -28,6 +28,23 @@ class WebSearchEngine:
     def should_search_web(self, query: str, context: List[Dict] = None) -> bool:
         """تشخیص اینکه آیا نیاز به جستجوی وب هست یا نه"""
         
+        # پیام‌های ساده که نیاز به جستجوی وب ندارن
+        simple_greetings = [
+            "سلام", "درود", "صبح بخیر", "عصر بخیر", "شب بخیر",
+            "چطوری", "حالت چطوره", "خوبی", "چه خبر",
+            "hello", "hi", "how are you", "good morning"
+        ]
+        
+        query_lower = query.lower().strip()
+        
+        # اگر پیام ساده سلام و احوال‌پرسی باشه، جستجو نکن
+        if any(greeting in query_lower for greeting in simple_greetings):
+            return False
+        
+        # اگر پیام خیلی کوتاه باشه (کمتر از 5 کلمه)
+        if len(query.split()) < 5:
+            return False
+        
         # کلمات کلیدی که نشان‌دهنده نیاز به اطلاعات جدید هستند
         web_indicators = [
             "آخرین", "جدیدترین", "امروز", "الان", "فعلی", "اخبار",
@@ -37,17 +54,16 @@ class WebSearchEngine:
             "latest", "current", "today", "now", "news", "price"
         ]
         
-        query_lower = query.lower()
-        
         # اگر شامل کلمات کلیدی باشد
         if any(indicator in query_lower for indicator in web_indicators):
             return True
         
-        # اگر سؤال باشد و در context جواب نباشد
-        if "؟" in query and (not context or len(context) == 0):
+        # اگر سؤال پیچیده باشد و در context جواب نباشد
+        if "؟" in query and len(query.split()) > 8 and (not context or len(context) == 0):
             return True
         
-        # اگر درخواست اطلاعات خاص باشد
+        # پیش‌فرض: جستجو نکن
+        return False
         specific_requests = [
             "بگو", "توضیح بده", "شرح بده", "اطلاعات", "جزئیات"
         ]

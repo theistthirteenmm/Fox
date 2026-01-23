@@ -1,0 +1,29 @@
+{
+  "name": "حامد",
+  "role": "مدیر شرکت",
+  "work_domain": "فناوری",
+  "communication_preference": "دوستانه اما حرفه‌ای",
+  "work_hours": {
+    "start": 9,
+    "end": 18
+  },
+  "personality_type": "INTJ",
+  "interests": [
+    "فناوری",
+    "هوش مصنوعی",
+    "مدیریت"
+  ],
+  "goals": [
+    "بهبود کسب‌وکار",
+    "یادگیری مداوم"
+  ],
+  "stress_indicators": [
+    "پیام‌های کوتاه",
+    "سؤالات سریع"
+  ],
+  "motivation_factors": [
+    "کارایی",
+    "نوآوری",
+    "رشد"
+  ]
+}

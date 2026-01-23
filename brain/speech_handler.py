@@ -12,6 +12,9 @@ import speech_recognition as sr
 import pyttsx3
 import whisper
 from pathlib import Path
+import requests
+import json
+import urllib.parse
 
 class SpeechHandler:
     def __init__(self):
@@ -220,14 +223,31 @@ class SpeechHandler:
             
             print(f"🔊 در حال تولید صدا: {text[:50]}...")
             
+            # تنظیمات بهتر برای TTS
+            self.tts_engine.setProperty('rate', 120)  # سرعت کمتر برای فارسی
+            self.tts_engine.setProperty('volume', 1.0)  # حجم کامل
+            
+            # انتخاب بهترین صدا
+            voices = self.tts_engine.getProperty('voices')
+            if voices:
+                # ترجیح صدای زنانه
+                for voice in voices:
+                    if 'female' in voice.name.lower() or 'zira' in voice.name.lower():
+                        self.tts_engine.setProperty('voice', voice.id)
+                        print(f"🎵 استفاده از صدا: {voice.name}")
+                        break
+            
+            # برای فارسی، متن رو به انگلیسی transliterate می‌کنیم
+            processed_text = self._prepare_persian_text(text)
+            
             if save_file:
                 # ذخیره در فایل
-                self.tts_engine.save_to_file(text, save_file)
+                self.tts_engine.save_to_file(processed_text, save_file)
                 self.tts_engine.runAndWait()
                 print(f"✅ فایل صوتی ذخیره شد: {save_file}")
             else:
                 # پخش مستقیم
-                self.tts_engine.say(text)
+                self.tts_engine.say(processed_text)
                 self.tts_engine.runAndWait()
                 print("✅ صدا پخش شد")
             
@@ -236,6 +256,63 @@ class SpeechHandler:
         except Exception as e:
             print(f"❌ خطا در تولید صدا: {e}")
             return False
+    
+    def _prepare_persian_text(self, text: str) -> str:
+        """آماده‌سازی متن فارسی برای TTS"""
+        
+        # اگر متن فارسی نیست، همون رو برگردون
+        if not self._is_persian_text(text):
+            return text
+        
+        # تبدیل برخی کلمات فارسی به انگلیسی برای تلفظ بهتر
+        persian_to_english = {
+            'سلام': 'salam',
+            'روباه': 'robah',
+            'چطوری': 'chetori',
+            'خوبم': 'khobam',
+            'ممنون': 'mamnoon',
+            'متشکرم': 'moteshakeram',
+            'خداحافظ': 'khodahafez',
+            'بله': 'bale',
+            'نه': 'na',
+            'آره': 'are',
+            'باشه': 'bashe',
+            'اوکی': 'okay',
+            'درست': 'dorost',
+            'غلط': 'ghalat',
+            'خوب': 'khob',
+            'بد': 'bad',
+            'عالی': 'ali',
+            'فوق‌العاده': 'fogholade',
+            'کار': 'kar',
+            'کمک': 'komak',
+            'می‌تونم': 'mitonam',
+            'می‌خوام': 'mikham',
+            'دوست دارم': 'doost daram'
+        }
+        
+        # جایگزینی کلمات
+        processed_text = text
+        for persian, english in persian_to_english.items():
+            processed_text = processed_text.replace(persian, english)
+        
+        # حذف علائم نگارشی فارسی که مشکل ایجاد می‌کنند
+        processed_text = processed_text.replace('‌', ' ')  # نیم‌فاصله
+        processed_text = processed_text.replace('؟', '?')
+        processed_text = processed_text.replace('،', ',')
+        
+        return processed_text
+    
+    def _is_persian_text(self, text: str) -> bool:
+        """تشخیص متن فارسی"""
+        persian_chars = 'آابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی'
+        persian_count = sum(1 for char in text if char in persian_chars)
+        total_chars = len([char for char in text if char.isalpha()])
+        
+        if total_chars == 0:
+            return False
+        
+        return (persian_count / total_chars) > 0.3  # حداقل 30% فارسی
     
     def is_audio_file(self, filename: str) -> bool:
         """بررسی فرمت فایل صوتی"""
