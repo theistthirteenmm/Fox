@@ -2,8 +2,12 @@
 echo 🦊 راه‌اندازی سیستم روباه...
 echo.
 
+:: تنظیم مسیر مدل‌ها در پروژه
+set "OLLAMA_MODELS=%CD%\models"
+echo 📁 مسیر مدل‌ها: %OLLAMA_MODELS%
+
 echo 📡 شروع Backend...
-start "Robah Backend" cmd /k "python backend/main.py"
+start "Robah Backend" cmd /k "set OLLAMA_MODELS=%CD%\models && python backend/main.py"
 
 echo ⏳ صبر 5 ثانیه برای راه‌اندازی Backend...
 timeout /t 5 /nobreak >nul
@@ -15,5 +19,6 @@ echo.
 echo ✅ سیستم روباه در حال راه‌اندازی است!
 echo 📱 Frontend: http://localhost:3000
 echo 🔧 Backend: http://localhost:8000
+echo 📁 مدل‌ها: %CD%\models
 echo.
 pause

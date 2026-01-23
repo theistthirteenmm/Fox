@@ -18,7 +18,15 @@ from .user_profiler import user_profiler
 
 class AIBrain:
     def __init__(self):
-        self.model_name = "partai/dorna-llama3:8b-instruct-q8_0"  # مدل فارسی بهینه
+        # تنظیمات چند مدله
+        self.models = {
+            "persian": "partai/dorna-llama3:8b-instruct-q8_0",  # مدل فارسی تخصصی
+            "general": "llama4:scout",                           # مدل عمومی قدرتمند
+            "code": "codellama:13b",                            # مدل کد
+            "fast": "llama4:scout-q4"                           # مدل سریع
+        }
+        
+        self.current_model = self.models["persian"]  # مدل پیش‌فرض
         self.ollama_url = "http://localhost:11434"
         self.is_model_loaded = False
         self.conversation_history = []
@@ -36,6 +44,45 @@ class AIBrain:
         self.conversation_context_window = 10  # نگه‌داری آخرین 10 پیام
         self.topic_continuity_threshold = 3  # حداقل 3 پیام برای تشخیص موضوع مداوم
         
+    def _select_best_model(self, message: str, context: List[Dict] = None) -> str:
+        """انتخاب بهترین مدل بر اساس نوع پیام"""
+        message_lower = message.lower()
+        
+        # تشخیص کد
+        if self._detect_code_in_message(message):
+            print("🔧 انتخاب مدل کد برای پردازش")
+            return self.models["code"]
+        
+        # تشخیص زبان فارسی
+        persian_chars = len([c for c in message if '\u0600' <= c <= '\u06FF'])
+        total_chars = len([c for c in message if c.isalpha()])
+        
+        if total_chars > 0 and (persian_chars / total_chars) > 0.3:
+            print("🇮🇷 انتخاب مدل فارسی")
+            return self.models["persian"]
+        
+        # برای پیام‌های کوتاه و سریع
+        if len(message.split()) < 10:
+            print("⚡ انتخاب مدل سریع")
+            return self.models["fast"]
+        
+        # برای پیام‌های پیچیده
+        print("🧠 انتخاب مدل عمومی قدرتمند")
+        return self.models["general"]
+    
+    def _detect_code_in_message(self, message: str) -> bool:
+        """تشخیص وجود کد در پیام"""
+        code_indicators = [
+            'def ', 'function', 'class ', 'import ', 'from ',
+            'var ', 'let ', 'const ', 'if (', 'for (', 'while (',
+            'public class', '#include', 'SELECT', 'INSERT',
+            '```', 'کد', 'برنامه', 'اسکریپت', 'function',
+            '{', '}', '()', '=>', '==', '!=', '&&', '||'
+        ]
+        
+        message_lower = message.lower()
+        return any(indicator in message_lower for indicator in code_indicators)
+
     def is_loaded(self) -> bool:
         """بررسی آماده بودن مدل"""
         try:
@@ -45,19 +92,38 @@ class AIBrain:
             response = requests.get(f"{self.ollama_url}/api/tags", proxies=proxies)
             if response.status_code == 200:
                 models = response.json().get("models", [])
-                return any(model["name"].startswith(self.model_name) for model in models)
+                # بررسی وجود حداقل یکی از مدل‌ها
+                available_models = [model["name"] for model in models]
+                for model_name in self.models.values():
+                    if any(model_name in available for available in available_models):
+                        return True
         except:
             pass
         return False
     
     async def initialize_model(self):
-        """راه‌اندازی اولیه مدل"""
-        print("🧠 در حال بارگذاری مدل هوش مصنوعی...")
+        """راه‌اندازی اولیه مدل‌ها"""
+        print("🧠 در حال بررسی مدل‌های موجود...")
         
-        if not self.is_loaded():
-            print(f"📥 در حال دانلود مدل {self.model_name}...")
-            # دانلود مدل اگر وجود نداشته باشد
-            await self._pull_model()
+        # بررسی مدل‌های موجود
+        available_models = await self._get_available_models()
+        
+        # انتخاب بهترین مدل موجود
+        best_model = None
+        for model_type, model_name in self.models.items():
+            if any(model_name in available for available in available_models):
+                best_model = model_name
+                print(f"✅ مدل {model_type} موجود: {model_name}")
+                break
+        
+        if not best_model:
+            print("❌ هیچ مدل مناسبی یافت نشد")
+            # استفاده از مدل فارسی به عنوان fallback
+            best_model = self.models["persian"]
+            print(f"📥 در حال دانلود مدل پیش‌فرض: {best_model}")
+            await self._pull_model(best_model)
+        
+        self.current_model = best_model
         
         # تست اولیه مدل با prompt بهتر
         test_prompt = """تو روباه هستی، یک دستیار هوش مصنوعی فارسی. به فارسی پاسخ بده.
@@ -74,15 +140,31 @@ class AIBrain:
             # حتی اگر تست ناموفق بود، مدل را loaded در نظر بگیر
             self.is_model_loaded = True
     
-    async def _pull_model(self):
+    async def _get_available_models(self) -> List[str]:
+        """دریافت لیست مدل‌های موجود"""
+        try:
+            proxies = {'http': None, 'https': None}
+            response = requests.get(f"{self.ollama_url}/api/tags", proxies=proxies)
+            if response.status_code == 200:
+                models = response.json().get("models", [])
+                return [model["name"] for model in models]
+        except:
+            pass
+        return []
+    
+    async def _pull_model(self, model_name: str = None):
         """دانلود مدل از Ollama"""
+        if not model_name:
+            model_name = self.current_model
+            
         try:
             # تنظیمات برای عدم استفاده از proxy برای localhost
             proxies = {'http': None, 'https': None}
             
+            print(f"📥 در حال دانلود {model_name}...")
             response = requests.post(
                 f"{self.ollama_url}/api/pull",
-                json={"name": self.model_name},
+                json={"name": model_name},
                 stream=True,
                 proxies=proxies
             )
@@ -148,6 +230,10 @@ class AIBrain:
             if self.web_search.is_online():
                 print("🌐 مرحله 2: جستجوی اطلاعات از اینترنت...")
                 web_info = await self.web_search.search_and_summarize(message)
+        
+        # انتخاب بهترین مدل برای این پیام
+        selected_model = self._select_best_model(message, context)
+        self.current_model = selected_model
         
         # مرحله 3: تولید پاسخ اولیه توسط AI مدل با context بهبود یافته
         print("🤖 مرحله 3: تولید پاسخ اولیه توسط مدل AI...")
@@ -232,7 +318,7 @@ class AIBrain:
                 response = requests.post(
                     f"{self.ollama_url}/api/generate",
                     json={
-                        "model": self.model_name,
+                        "model": self.current_model,  # استفاده از مدل انتخاب شده
                         "prompt": prompt,
                         "stream": False,
                         "options": {
@@ -348,6 +434,33 @@ class AIBrain:
             ]
             return random.choice(responses)
     
+    def get_model_status(self) -> Dict:
+        """وضعیت مدل‌ها"""
+        return {
+            "current_model": self.current_model,
+            "available_models": self.models,
+            "is_loaded": self.is_model_loaded
+        }
+    
+    async def switch_model(self, model_type: str) -> bool:
+        """تغییر مدل"""
+        if model_type not in self.models:
+            print(f"❌ نوع مدل {model_type} موجود نیست")
+            return False
+        
+        new_model = self.models[model_type]
+        print(f"🔄 تغییر مدل به: {new_model}")
+        
+        # بررسی وجود مدل
+        available_models = await self._get_available_models()
+        if not any(new_model in available for available in available_models):
+            print(f"📥 دانلود مدل {new_model}...")
+            await self._pull_model(new_model)
+        
+        self.current_model = new_model
+        print(f"✅ مدل تغییر یافت به: {new_model}")
+        return True
+
     async def fine_tune_from_data(self):
         """Fine-tuning مدل بر اساس داده‌های جمع‌آوری شده"""
         # این بخش بعداً پیاده‌سازی می‌شود

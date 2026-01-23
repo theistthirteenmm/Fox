@@ -4,21 +4,20 @@
 
 ## 📋 فهرست اسکریپت‌ها
 
-### 🚀 راه‌اندازی کامل
-- `start_robah.bat` - Windows
-- `start_robah.sh` - Linux/Mac
+### 🚀 راه‌اندازی سیستم
+- `start_robah.bat` / `start_robah.sh` - راه‌اندازی کامل روباه
+- `run.bat` / `run.sh` - راه‌اندازی سریع
+- `stop_robah.bat` / `stop_robah.sh` - توقف سرویس‌ها
 
-### ⚡ راه‌اندازی سریع  
-- `run.bat` - Windows
-- `run.sh` - Linux/Mac
-
-### ⏹️ توقف سرویس‌ها
-- `stop_robah.bat` - Windows
-- `stop_robah.sh` - Linux/Mac
+### 🤖 مدیریت مدل‌ها
+- `download_models.bat` / `download_models.sh` - دانلود همه مدل‌ها
+- `migrate_models.bat` - انتقال مدل‌ها از C به پروژه
+- `setup_models_path.bat` - تنظیم مسیر مدل‌ها
+- `cleanup_old_models.bat` - پاک‌سازی مدل‌های قدیمی
 
 ## 🎯 استفاده
 
-### اولین بار:
+### راه‌اندازی اولیه:
 ```bash
 # Windows
 scripts\start_robah.bat
@@ -27,37 +26,40 @@ scripts\start_robah.bat
 ./scripts/start_robah.sh
 ```
 
-### اجراهای بعدی:
+### دانلود مدل‌ها:
 ```bash
 # Windows
-scripts\run.bat
+scripts\download_models.bat
 
-# Linux/Mac
-./scripts/run.sh
+# Linux/Mac  
+./scripts/download_models.sh
 ```
 
-### توقف:
+### انتقال مدل‌ها (Windows):
 ```bash
-# Windows
-scripts\stop_robah.bat
+# انتقال از C:\Users\[user]\.ollama\models به پروژه
+scripts\migrate_models.bat
 
-# Linux/Mac
-./scripts/stop_robah.sh
+# پاک‌سازی مدل‌های قدیمی (بعد از اطمینان)
+scripts\cleanup_old_models.bat
 ```
 
-## 📝 توضیحات
+## 📊 مدل‌های پشتیبانی شده
 
-- **اسکریپت‌های کامل**: شامل بررسی پیش‌نیازها و نصب dependencies
-- **اسکریپت‌های سریع**: فقط راه‌اندازی سرویس‌ها
-- **اسکریپت‌های توقف**: توقف ایمن تمام فرآیندها
+| مدل | اندازه | کاربرد | دستور |
+|-----|--------|---------|--------|
+| `partai/dorna-llama3:8b-instruct-q8_0` | 8.5GB | فارسی | نصب شده |
+| `llama4:scout` | 50GB | قدرتمند | `scripts\download_models.bat` |
+| `codellama:13b` | 7GB | کد | `scripts\download_models.bat` |
+| `llama4:scout-q4` | 10GB | سریع | `scripts\download_models.bat` |
 
 ## 🔧 سفارشی‌سازی
 
-می‌توانید متغیرهای محیطی را در اسکریپت‌ها تغییر دهید:
+متغیرهای محیطی قابل تنظیم:
 
 ```bash
-# مدل AI
-ROBAH_MODEL="partai/dorna-llama3:8b-instruct-q8_0"
+# مسیر مدل‌ها
+OLLAMA_MODELS=D:\fox\models
 
 # پورت‌ها
 ROBAH_PORT=8000
