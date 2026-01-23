@@ -333,6 +333,7 @@ function App() {
           onSendMessage={sendMessage}
           isLoading={isLoading}
           isConnected={isConnected}
+          onPlayAudio={playTextToSpeech}
         />
       </MainContent>
     </AppContainer>

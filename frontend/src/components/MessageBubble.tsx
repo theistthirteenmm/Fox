@@ -152,13 +152,49 @@ const BubbleContent = styled.div`
   min-width: 0;
 `;
 
+const ActionButtons = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  justify-content: flex-end;
+`;
+
+const ActionButton = styled.button`
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  color: white;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
 interface MessageBubbleProps {
   type: 'user' | 'ai' | 'system';
   message: string;
   timestamp: string;
+  onPlayAudio?: (text: string) => void; // اضافه کردن callback برای پخش صدا
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ type, message, timestamp }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({ type, message, timestamp, onPlayAudio }) => {
   const isUser = type === 'user';
   const isSystem = type === 'system';
   
@@ -181,6 +217,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ type, message, timestamp 
     return '🦊';
   };
 
+  const handlePlayAudio = () => {
+    if (onPlayAudio && message) {
+      onPlayAudio(message);
+    }
+  };
+
   return (
     <BubbleContainer $isUser={isUser} $isSystem={isSystem}>
       <MessageWrapper $isUser={isUser}>
@@ -199,6 +241,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ type, message, timestamp 
                 <ReactMarkdown>{message}</ReactMarkdown>
               )}
             </MessageContent>
+            
+            {/* دکمه‌های عملیات برای پیام‌های AI */}
+            {type === 'ai' && onPlayAudio && (
+              <ActionButtons>
+                <ActionButton onClick={handlePlayAudio} title="پخش صدا">
+                  🔊 پخش صدا
+                </ActionButton>
+              </ActionButtons>
+            )}
             
             {timestamp && (
               <Timestamp $isUser={isUser}>

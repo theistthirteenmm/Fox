@@ -239,13 +239,15 @@ interface ChatInterfaceProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
   isConnected: boolean;
+  onPlayAudio?: (text: string) => void; // اضافه کردن callback برای پخش صدا
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   messages,
   onSendMessage,
   isLoading,
-  isConnected
+  isConnected,
+  onPlayAudio
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -311,6 +313,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               type={message.type}
               message={message.message}
               timestamp={message.timestamp}
+              onPlayAudio={onPlayAudio}
             />
           ))
         )}
