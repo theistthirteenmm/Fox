@@ -29,12 +29,14 @@ from .deep_personality_learning import deep_personality_learning
 
 class AdvancedAIBrain:
     def __init__(self):
-        # تنظیمات چند مدله
+        # تنظیمات چند مدله - مدل‌های دانلود شده و کارآمد
         self.models = {
             "persian": "partai/dorna-llama3:8b-instruct-q8_0",  # مدل فارسی تخصصی
-            "general": "llama4:scout",                           # مدل عمومی قدرتمند
-            "code": "codellama:13b",                            # مدل کد
-            "fast": "llama4:scout-q4"                           # مدل سریع
+            "general": "deepseek-r1:7b",                         # مدل استدلال (جایگزین عمومی)
+            "reasoning": "deepseek-r1:7b",                       # مدل استدلال پیشرفته
+            "code": "deepseek-coder-v2:16b",                    # مدل کد پیشرفته
+            "fast": "llama3.2:3b",                              # مدل سریع (2.5s!)
+            "multilingual": "partai/dorna-llama3:8b-instruct-q8_0"  # فارسی به جای qwen
         }
         
         self.current_model = self.models["persian"]  # مدل پیش‌فرض
@@ -260,22 +262,39 @@ class AdvancedAIBrain:
             await self.physical_interface.perform_task_gesture("thinking")
     
     async def _intelligent_model_selection(self, message: str, personal_response: Dict, analysis: Dict) -> str:
-        """انتخاب هوشمند مدل"""
+        """انتخاب هوشمند مدل - مدل‌های جدید 2025"""
         
-        # اولویت با تحلیل شخصی
+        # تحلیل پیام
+        message_lower = message.lower()
         domain = analysis.get("domain", "general")
         urgency = analysis.get("urgency_level", "medium")
         complexity = analysis.get("complexity", "medium")
+        message_length = analysis.get("message_length", 0)
         
-        # انتخاب بر اساس ترکیب عوامل
-        if domain == "code" or self._detect_code_in_message(message):
+        # کلمات کلیدی برای انواع مختلف
+        code_keywords = ['کد', 'برنامه', 'function', 'class', 'def', 'import', 'python', 'javascript', 'html', 'css', 'sql', 'debug', 'error', 'bug', 'algorithm']
+        reasoning_keywords = ['تحلیل', 'استدلال', 'منطق', 'چرا', 'علت', 'دلیل', 'مقایسه', 'بررسی', 'تفکر', 'reasoning', 'logic', 'analyze', 'compare', 'evaluate']
+        
+        # انتخاب هوشمند مدل
+        if domain == "code" or any(keyword in message_lower for keyword in code_keywords):
+            print("🤖 انتخاب مدل کد پیشرفته: deepseek-coder-v2")
             return self.models["code"]
-        elif urgency == "high" and complexity == "low":
+            
+        elif any(keyword in message_lower for keyword in reasoning_keywords) or complexity == "high":
+            print("🧠 انتخاب مدل استدلال: deepseek-r1")
+            return self.models["reasoning"]
+            
+        elif urgency == "high" and complexity == "low" or message_length < 10:
+            print("⚡ انتخاب مدل سریع: llama3.2")
             return self.models["fast"]
-        elif complexity == "high" or analysis.get("message_length", 0) > 30:
+            
+        elif message_length > 30 or complexity == "high":
+            print("🧠 انتخاب مدل استدلال: deepseek-r1")
             return self.models["general"]
-        else:
-            return self.models["persian"]  # پیش‌فرض برای دستیار شخصی
+        
+        # پیش‌فرض: مدل فارسی برای دستیار شخصی
+        print("🦊 انتخاب مدل فارسی پیش‌فرض")
+        return self.models["persian"]
     
     async def _generate_contextual_ai_response(self, message: str, model: str, full_context: Dict) -> str:
         """تولید پاسخ AI با context کامل"""

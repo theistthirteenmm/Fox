@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 >nul
-title 🦊 دانلود مدل‌های روباه
+title 🦊 دانلود مدل‌های روباه - نسخه 2025
 
 echo.
 echo ===============================================
-echo 🦊 دانلود مدل‌های هوش مصنوعی روباه
+echo 🦊 دانلود بهترین مدل‌های هوش مصنوعی 2025
 echo ===============================================
 echo.
 
@@ -17,15 +17,17 @@ echo.
 :: ایجاد پوشه مدل‌ها اگر وجود نداشته باشد
 if not exist "models" mkdir models
 
-echo 📋 مدل‌های مورد نیاز:
-echo   1. llama4:scout (مدل قدرتمند - ~50GB)
-echo   2. codellama:13b (مدل کد - ~7GB)  
-echo   3. llama4:scout-q4 (مدل سریع - ~10GB)
-echo   4. partai/dorna-llama3:8b-instruct-q8_0 (فارسی - موجود)
+echo 📋 بهترین مدل‌های 2025:
+echo   1. llama3.3:70b (مدل عمومی قدرتمند - ~43GB)
+echo   2. deepseek-coder-v2:16b (مدل کد پیشرفته - ~9GB)
+echo   3. deepseek-r1:7b (مدل استدلال - ~4GB)
+echo   4. qwen2.5:32b (مدل چندزبانه - ~18GB)
+echo   5. llama3.2:3b (مدل سریع - ~2GB)
+echo   6. partai/dorna-llama3:8b-instruct-q8_0 (فارسی - موجود)
 echo.
 
 echo ⚠️  توجه: دانلود ممکن است چندین ساعت طول بکشد
-echo 💾 فضای مورد نیاز: حدود 67 گیگابایت
+echo 💾 فضای مورد نیاز: حدود 76 گیگابایت
 echo 📍 محل ذخیره: %CD%\models
 echo.
 
@@ -37,48 +39,81 @@ if /i not "%confirm%"=="y" (
 )
 
 echo.
-echo 🚀 شروع دانلود مدل‌ها...
+echo 🚀 شروع دانلود بهترین مدل‌های 2025...
 echo.
 
 echo ===============================================
-echo 📥 دانلود مدل قدرتمند (llama4:scout)
+echo 📥 دانلود مدل عمومی قدرتمند (llama3.3:70b)
 echo ===============================================
-echo 📊 اندازه: ~50GB
-echo ⏱️  زمان تخمینی: 2-4 ساعت
+echo 📊 اندازه: ~43GB
+echo ⏱️  زمان تخمینی: 2-3 ساعت
+echo 🎯 بهترین مدل عمومی 2025
 echo.
-ollama pull llama4:scout
+ollama pull llama3.3:70b
 if %errorlevel% neq 0 (
-    echo ❌ خطا در دانلود llama4:scout
+    echo ❌ خطا در دانلود llama3.3:70b
 ) else (
-    echo ✅ llama4:scout با موفقیت دانلود شد
+    echo ✅ llama3.3:70b با موفقیت دانلود شد
 )
 
 echo.
 echo ===============================================
-echo 📥 دانلود مدل کد (codellama:13b)
+echo 📥 دانلود مدل کد پیشرفته (deepseek-coder-v2:16b)
 echo ===============================================
-echo 📊 اندازه: ~7GB
-echo ⏱️  زمان تخمینی: 30-60 دقیقه
-echo.
-ollama pull codellama:13b
-if %errorlevel% neq 0 (
-    echo ❌ خطا در دانلود codellama:13b
-) else (
-    echo ✅ codellama:13b با موفقیت دانلود شد
-)
-
-echo.
-echo ===============================================
-echo 📥 دانلود مدل سریع (llama4:scout-q4)
-echo ===============================================
-echo 📊 اندازه: ~10GB
+echo 📊 اندازه: ~9GB
 echo ⏱️  زمان تخمینی: 45-90 دقیقه
+echo 🎯 بهترین مدل کد 2025
 echo.
-ollama pull llama4:scout-q4
+ollama pull deepseek-coder-v2:16b
 if %errorlevel% neq 0 (
-    echo ❌ خطا در دانلود llama4:scout-q4
+    echo ❌ خطا در دانلود deepseek-coder-v2:16b
 ) else (
-    echo ✅ llama4:scout-q4 با موفقیت دانلود شد
+    echo ✅ deepseek-coder-v2:16b با موفقیت دانلود شد
+)
+
+echo.
+echo ===============================================
+echo 📥 دانلود مدل استدلال (deepseek-r1:7b)
+echo ===============================================
+echo 📊 اندازه: ~4GB
+echo ⏱️  زمان تخمینی: 20-40 دقیقه
+echo 🎯 بهترین مدل استدلال 2025
+echo.
+ollama pull deepseek-r1:7b
+if %errorlevel% neq 0 (
+    echo ❌ خطا در دانلود deepseek-r1:7b
+) else (
+    echo ✅ deepseek-r1:7b با موفقیت دانلود شد
+)
+
+echo.
+echo ===============================================
+echo 📥 دانلود مدل چندزبانه (qwen2.5:32b)
+echo ===============================================
+echo 📊 اندازه: ~18GB
+echo ⏱️  زمان تخمینی: 1-2 ساعت
+echo 🎯 بهترین مدل چندزبانه 2025
+echo.
+ollama pull qwen2.5:32b
+if %errorlevel% neq 0 (
+    echo ❌ خطا در دانلود qwen2.5:32b
+) else (
+    echo ✅ qwen2.5:32b با موفقیت دانلود شد
+)
+
+echo.
+echo ===============================================
+echo 📥 دانلود مدل سریع (llama3.2:3b)
+echo ===============================================
+echo 📊 اندازه: ~2GB
+echo ⏱️  زمان تخمینی: 10-20 دقیقه
+echo 🎯 بهترین مدل سریع 2025
+echo.
+ollama pull llama3.2:3b
+if %errorlevel% neq 0 (
+    echo ❌ خطا در دانلود llama3.2:3b
+) else (
+    echo ✅ llama3.2:3b با موفقیت دانلود شد
 )
 
 echo.
@@ -92,7 +127,15 @@ ollama list
 
 echo.
 echo ✅ تمام مدل‌ها در %CD%\models ذخیره شدند!
-echo 🦊 حالا می‌توانید روباه را با قابلیت‌های جدید استفاده کنید
+echo 🦊 حالا می‌توانید روباه را با بهترین مدل‌های 2025 استفاده کنید
+echo.
+
+echo 💡 مدل‌های جدید:
+echo   🚀 llama3.3:70b - برای کارهای پیچیده
+echo   🤖 deepseek-coder-v2:16b - برای برنامه‌نویسی
+echo   🧠 deepseek-r1:7b - برای استدلال و تحلیل
+echo   🌍 qwen2.5:32b - برای ترجمه و چندزبانه
+echo   ⚡ llama3.2:3b - برای پاسخ‌های سریع
 echo.
 
 echo 💡 نکته: برای استفاده دائمی، این متغیر را به سیستم اضافه کنید:

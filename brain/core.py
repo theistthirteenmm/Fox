@@ -38,12 +38,14 @@ except ImportError:
 
 class AIBrain:
     def __init__(self):
-        # تنظیمات چند مدله
+        # تنظیمات چند مدله - مدل‌های دانلود شده و کارآمد
         self.models = {
             "persian": "partai/dorna-llama3:8b-instruct-q8_0",  # مدل فارسی تخصصی
-            "general": "llama4:scout",                           # مدل عمومی قدرتمند
-            "code": "codellama:13b",                            # مدل کد
-            "fast": "llama4:scout-q4"                           # مدل سریع
+            "general": "deepseek-r1:7b",                         # مدل استدلال (جایگزین عمومی)
+            "reasoning": "deepseek-r1:7b",                       # مدل استدلال پیشرفته
+            "code": "deepseek-coder-v2:16b",                    # مدل کد پیشرفته
+            "fast": "llama3.2:3b",                              # مدل سریع (2.5s!)
+            "multilingual": "partai/dorna-llama3:8b-instruct-q8_0"  # فارسی به جای qwen
         }
         
         self.current_model = self.models["persian"]  # مدل پیش‌فرض
@@ -232,17 +234,35 @@ class AIBrain:
             return "متأسفم، الان نمی‌تونم پاسخ بدم. لطفاً دوباره امتحان کن."
     
     def _select_best_model(self, message: str, context: Dict = None) -> str:
-        """انتخاب بهترین مدل برای پیام"""
+        """انتخاب بهترین مدل برای پیام - مدل‌های جدید 2025"""
         
         # تحلیل نوع پیام
         message_lower = message.lower()
         
-        # اگر کد یا برنامه‌نویسی
-        if any(keyword in message_lower for keyword in ['کد', 'برنامه', 'function', 'class', 'def', 'import']):
-            # فعلاً فقط مدل فارسی موجود هست
-            return self.models["persian"]
+        # کلمات کلیدی برای انواع مختلف
+        code_keywords = ['کد', 'برنامه', 'function', 'class', 'def', 'import', 'python', 'javascript', 'html', 'css', 'sql', 'debug', 'error', 'bug']
+        reasoning_keywords = ['تحلیل', 'استدلال', 'منطق', 'چرا', 'علت', 'دلیل', 'مقایسه', 'بررسی', 'تفکر', 'reasoning', 'logic', 'analyze']
+        fast_keywords = ['سریع', 'quick', 'fast', 'simple', 'ساده']
         
-        # برای همه حالات از مدل فارسی استفاده کن (تا مدل‌های دیگه دانلود نشن)
+        # انتخاب مدل بر اساس محتوا
+        if any(keyword in message_lower for keyword in code_keywords):
+            print("🤖 انتخاب مدل کد پیشرفته: deepseek-coder-v2")
+            return self.models["code"]
+            
+        elif any(keyword in message_lower for keyword in reasoning_keywords):
+            print("🧠 انتخاب مدل استدلال: deepseek-r1")
+            return self.models["reasoning"]
+            
+        elif any(keyword in message_lower for keyword in fast_keywords) or len(message) < 50:
+            print("⚡ انتخاب مدل سریع: llama3.2")
+            return self.models["fast"]
+            
+        elif len(message) > 200:  # پیام‌های پیچیده
+            print("🧠 انتخاب مدل استدلال: deepseek-r1")
+            return self.models["general"]
+        
+        # پیش‌فرض: مدل فارسی
+        print("🦊 انتخاب مدل فارسی پیش‌فرض")
         return self.models["persian"]
     
     def _build_personal_prompt(self, message: str, personal_context: Dict) -> str:

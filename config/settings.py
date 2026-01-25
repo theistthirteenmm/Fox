@@ -10,9 +10,17 @@ BASE_DIR = Path(__file__).parent.parent
 DATA_DIR = BASE_DIR / "data"
 LOGS_DIR = BASE_DIR / "logs"
 
-# تنظیمات AI
+# تنظیمات AI - مدل‌های دانلود شده و کارآمد
 AI_CONFIG = {
-    "model_name": "partai/dorna-llama3:8b-instruct-q8_0",
+    "model_name": "partai/dorna-llama3:8b-instruct-q8_0",  # مدل پیش‌فرض فارسی
+    "models": {
+        "persian": "partai/dorna-llama3:8b-instruct-q8_0",
+        "general": "deepseek-r1:7b",
+        "reasoning": "deepseek-r1:7b",
+        "code": "deepseek-coder-v2:16b",
+        "fast": "llama3.2:3b",
+        "multilingual": "partai/dorna-llama3:8b-instruct-q8_0"
+    },
     "ollama_url": "http://localhost:11434",
     "max_tokens": 500,
     "temperature": 0.7,
