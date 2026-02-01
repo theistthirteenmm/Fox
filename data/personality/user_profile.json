@@ -10,7 +10,8 @@
       "تحصیل",
       "برنامه‌نویسی",
       "سرگرمی",
-      "هوش مصنوعی"
+      "هوش مصنوعی",
+      "ورزش"
     ],
     "learning_goals": []
   },
@@ -19,7 +20,7 @@
     "emotional_tendencies": [],
     "interaction_frequency": {}
   },
-  "relationship_level": 2.0,
+  "relationship_level": 4.0,
   "trust_score": 5.0,
-  "last_updated": "2026-01-24T07:58:19.027528"
+  "last_updated": "2026-02-01T13:49:07.110204"
 }

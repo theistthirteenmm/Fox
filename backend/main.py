@@ -122,6 +122,35 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
+@app.post("/chat")
+async def http_chat_endpoint(request: dict):
+    """HTTP endpoint برای چت (برای frontend-3d)"""
+    try:
+        message = request.get("message", "")
+        user_id = request.get("user_id", "anonymous")
+        
+        if not message.strip():
+            return {"error": "پیام خالی است"}
+        
+        print(f"📨 پیام HTTP از {user_id}: {message}")
+        
+        # پردازش پیام
+        response = await process_user_message(message)
+        
+        return {
+            "response": response,
+            "user_id": user_id,
+            "timestamp": datetime.now().isoformat(),
+            "success": True
+        }
+        
+    except Exception as e:
+        print(f"❌ خطا در HTTP chat: {e}")
+        return {
+            "error": f"خطا در پردازش پیام: {str(e)}",
+            "success": False
+        }
+
 @app.post("/web-search/toggle")
 async def toggle_web_search(enabled: bool = None):
     """فعال/غیرفعال کردن جستجوی وب"""

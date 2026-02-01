@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <title>🦊 روباه سه‌بعدی - چت کامل</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            max-width: 300px;
+        }
+        
+        #info h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.5em;
+            color: #4ECDC4;
+        }
+        
+        #info p {
+            margin: 5px 0;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        /* پنل وضعیت مغز */
+        #brain-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(145deg, rgba(0,0,0,0.9), rgba(30,30,50,0.85));
+            color: white;
+            padding: 15px;
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(78, 205, 196, 0.3);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3), 0 0 15px rgba(78, 205, 196, 0.1);
+            z-index: 100;
+            min-width: 280px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+        }
+        
+        #brain-status.minimized {
+            width: 200px;
+            height: 50px;
+            min-width: auto;
+        }
+        
+        #brain-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(78, 205, 196, 0.3);
+            cursor: move;
+            user-select: none;
+        }
+        
+        #brain-header:hover {
+            background: rgba(78, 205, 196, 0.1);
+            border-radius: 10px;
+            margin: -5px -10px 15px -10px;
+            padding: 15px 10px 10px 10px;
+        }
+        
+        #brain-header.dragging {
+            cursor: grabbing;
+            background: rgba(78, 205, 196, 0.2);
+        }
+        
+        #brain-status.minimized #brain-header {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        #brain-title {
+            font-size: 1.2em;
+            color: #4ECDC4;
+            margin: 0;
+        }
+        
+        #brain-status.minimized #brain-title {
+            font-size: 1em;
+        }
+        
+        #brain-minimize-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: rgba(255, 193, 7, 0.8);
+            color: white;
+        }
+        
+        #brain-minimize-btn:hover {
+            background: rgba(255, 193, 7, 1);
+            transform: scale(1.1);
+        }
+        
+        #brain-content {
+            transition: all 0.3s ease;
+        }
+        
+        #brain-status.minimized #brain-content {
+            display: none;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            border-left: 3px solid;
+            transition: all 0.3s ease;
+        }
+        
+        .status-item:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+        
+        .status-item.online {
+            border-left-color: #4ECDC4;
+        }
+        
+        .status-item.brain {
+            border-left-color: #FF6B35;
+        }
+        
+        .status-item.memory {
+            border-left-color: #FFE66D;
+        }
+        
+        .status-item.conversations {
+            border-left-color: #A8E6CF;
+        }
+        
+        .status-item.knowledge {
+            border-left-color: #FF8B94;
+        }
+        
+        .status-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .status-value {
+            font-weight: bold;
+            font-size: 1em;
+        }
+        
+        .status-icon {
+            margin-left: 8px;
+            font-size: 1.1em;
+        }
+        
+        .pulse {
+            animation: statusPulse 2s infinite;
+        }
+        
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        /* رابط چت */
+        #chat-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 420px;
+            height: 350px;
+            background: linear-gradient(145deg, rgba(0,0,0,0.95), rgba(30,30,50,0.9));
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(78, 205, 196, 0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(78, 205, 196, 0.1);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        #chat-container.minimized {
+            height: 60px;
+            width: 300px;
+        }
+        
+        #chat-header {
+            background: linear-gradient(90deg, rgba(78, 205, 196, 0.8), rgba(68, 160, 141, 0.8));
+            padding: 12px 20px;
+            border-radius: 18px 18px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+            user-select: none;
+            position: relative;
+        }
+        
+        #chat-header:hover {
+            background: linear-gradient(90deg, rgba(78, 205, 196, 0.9), rgba(68, 160, 141, 0.9));
+        }
+        
+        #chat-header.dragging {
+            cursor: grabbing;
+            background: linear-gradient(90deg, rgba(78, 205, 196, 1), rgba(68, 160, 141, 1));
+        }
+        
+        #chat-title {
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #chat-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .chat-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        .chat-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+        
+        #minimize-btn {
+            background: rgba(255, 193, 7, 0.8);
+        }
+        
+        #minimize-btn:hover {
+            background: rgba(255, 193, 7, 1);
+        }
+        
+        #chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            color: white;
+            font-size: 0.95em;
+            background: rgba(0,0,0,0.1);
+            margin: 0 10px 10px 10px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        #chat-container.minimized #chat-messages {
+            display: none;
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 85%;
+            animation: messageSlide 0.3s ease;
+            position: relative;
+        }
+        
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message.user {
+            background: linear-gradient(135deg, #4ECDC4, #44A08D);
+            color: white;
+            margin-left: auto;
+            text-align: right;
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+        }
+        
+        .message.fox {
+            background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+            color: white;
+            margin-right: auto;
+            border: 1px solid rgba(78, 205, 196, 0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .message.system {
+            background: linear-gradient(135deg, rgba(255,193,7,0.3), rgba(255,193,7,0.1));
+            color: #FFE66D;
+            text-align: center;
+            font-size: 0.85em;
+            margin: 8px auto;
+            border: 1px solid rgba(255,193,7,0.3);
+            box-shadow: 0 2px 10px rgba(255,193,7,0.2);
+        }
+        
+        #chat-input-container {
+            padding: 15px 20px 20px 20px;
+            border-top: 1px solid rgba(78, 205, 196, 0.2);
+            display: flex;
+            gap: 12px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 0 0 18px 18px;
+            transition: all 0.3s ease;
+        }
+        
+        #chat-container.minimized #chat-input-container {
+            display: none;
+        }
+        
+        #chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid rgba(78, 205, 196, 0.3);
+            border-radius: 25px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        
+        #chat-input:focus {
+            border-color: rgba(78, 205, 196, 0.6);
+            background: rgba(255,255,255,0.15);
+            box-shadow: 0 0 20px rgba(78, 205, 196, 0.2);
+        }
+        
+        #chat-input::placeholder {
+            color: rgba(255,255,255,0.6);
+        }
+        
+        #send-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #4ECDC4, #44A08D);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+            min-width: 60px;
+        }
+        
+        #send-btn:hover {
+            background: linear-gradient(135deg, #44A08D, #4ECDC4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
+        }
+        
+        #send-btn:disabled {
+            background: rgba(255,255,255,0.2);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        #chat-status {
+            padding: 8px 20px;
+            font-size: 0.85em;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            background: rgba(0,0,0,0.1);
+            border-radius: 0 0 18px 18px;
+            transition: all 0.3s ease;
+        }
+        
+        #chat-container.minimized #chat-status {
+            display: none;
+        }
+        
+        .typing {
+            color: #4ECDC4;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* اسکرول بار */
+        #chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        #chat-messages::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+        
+        #chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    
+    <div id="info">
+        <h1>🦊 روباه سه‌بعدی</h1>
+        <p>با روباه چت کن - همون حافظه و شخصیت!</p>
+        <div class="controls">
+            <p>🖱️ ماوس: چرخش دوربین</p>
+            <p>🔍 اسکرول: زوم</p>
+        </div>
+    </div>
+    
+    <!-- پنل وضعیت مغز -->
+    <div id="brain-status">
+        <div id="brain-header">
+            <h3 id="brain-title">🧠 وضعیت مغز</h3>
+            <button id="brain-minimize-btn" title="کوچک کردن">−</button>
+        </div>
+        <div id="brain-content">
+            <div class="status-item online">
+                <span class="status-label">اتصال</span>
+                <span class="status-value pulse">🌐 آنلاین <span class="status-icon">●</span></span>
+            </div>
+            <div class="status-item brain">
+                <span class="status-label">مغز</span>
+                <span class="status-value">🧠 فعال <span class="status-icon">⚡</span></span>
+            </div>
+            <div class="status-item memory">
+                <span class="status-label">سطح</span>
+                <span class="status-value" id="brain-level">💭 16 <span class="status-icon">📊</span></span>
+            </div>
+            <div class="status-item memory">
+                <span class="status-label">حافظه کوتاه</span>
+                <span class="status-value" id="short-memory">💾 16 <span class="status-icon">🔄</span></span>
+            </div>
+            <div class="status-item conversations">
+                <span class="status-label">مکالمات</span>
+                <span class="status-value" id="conversations-count">💬 43 <span class="status-icon">📈</span></span>
+            </div>
+            <div class="status-item knowledge">
+                <span class="status-label">دانش</span>
+                <span class="status-value" id="knowledge-level">📚 0 <span class="status-icon">📖</span></span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- رابط چت -->
+    <div id="chat-container">
+        <div id="chat-header">
+            <div id="chat-title">
+                <span>🦊</span>
+                <span>چت با روباه</span>
+            </div>
+            <div id="chat-controls">
+                <button id="minimize-btn" class="chat-btn" title="کوچک کردن">−</button>
+            </div>
+        </div>
+        <div id="chat-messages">
+            <div class="message system">🦊 روباه آماده چت است!</div>
+        </div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="پیامت رو اینجا بنویس..." />
+            <button id="send-btn">🚀</button>
+        </div>
+        <div id="chat-status">آماده برای چت</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <script>
+        let scene, camera, renderer, fox, controls;
+        let currentEmotion = 'happy';
+        let isTyping = false;
+        let conversationCount = 43;
+        let brainLevel = 16;
+        let shortMemory = 16;
+        let knowledgeLevel = 0;
+        
+        // متغیرهای drag & drop
+        let isDragging = false;
+        let dragElement = null;
+        let dragOffset = { x: 0, y: 0 };
+        
+        // تابع drag & drop
+        function makeDraggable(element, handle) {
+            let startX, startY, initialX, initialY;
+            
+            handle.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                dragElement = element;
+                
+                startX = e.clientX;
+                startY = e.clientY;
+                
+                const rect = element.getBoundingClientRect();
+                initialX = rect.left;
+                initialY = rect.top;
+                
+                dragOffset.x = startX - initialX;
+                dragOffset.y = startY - initialY;
+                
+                handle.classList.add('dragging');
+                element.style.transition = 'none';
+                
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging || dragElement !== element) return;
+                
+                const newX = e.clientX - dragOffset.x;
+                const newY = e.clientY - dragOffset.y;
+                
+                // محدود کردن به داخل صفحه
+                const maxX = window.innerWidth - element.offsetWidth;
+                const maxY = window.innerHeight - element.offsetHeight;
+                
+                const boundedX = Math.max(0, Math.min(newX, maxX));
+                const boundedY = Math.max(0, Math.min(newY, maxY));
+                
+                element.style.left = boundedX + 'px';
+                element.style.top = boundedY + 'px';
+                element.style.right = 'auto';
+                element.style.bottom = 'auto';
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isDragging && dragElement === element) {
+                    isDragging = false;
+                    dragElement = null;
+                    handle.classList.remove('dragging');
+                    element.style.transition = 'all 0.3s ease';
+                }
+            });
+        }
+        
+        // آپدیت وضعیت مغز
+        function updateBrainStatus() {
+            document.getElementById('brain-level').innerHTML = `💭 ${brainLevel} <span class="status-icon">📊</span>`;
+            document.getElementById('short-memory').innerHTML = `💾 ${shortMemory} <span class="status-icon">🔄</span>`;
+            document.getElementById('conversations-count').innerHTML = `💬 ${conversationCount} <span class="status-icon">📈</span>`;
+            document.getElementById('knowledge-level').innerHTML = `📚 ${knowledgeLevel} <span class="status-icon">📖</span>`;
+        }
+        
+        // شبیه‌سازی تغییرات وضعیت
+        function simulateBrainActivity() {
+            setInterval(() => {
+                // تغییرات تصادفی کوچک
+                if (Math.random() > 0.7) {
+                    shortMemory = Math.max(0, Math.min(20, shortMemory + (Math.random() > 0.5 ? 1 : -1)));
+                }
+                if (Math.random() > 0.9) {
+                    brainLevel = Math.max(10, Math.min(20, brainLevel + (Math.random() > 0.5 ? 1 : -1)));
+                }
+                updateBrainStatus();
+            }, 3000);
+        }
+        
+        // رنگ‌های احساسات
+        const emotionColors = {
+            happy: 0xFF6B35,
+            thinking: 0x4ECDC4,
+            excited: 0xFFE66D,
+            sad: 0xA0A0A0
+        };
+        
+        // تشخیص احساسات از متن
+        function detectEmotion(text) {
+            const lowerText = text.toLowerCase();
+            if (lowerText.includes('خوشحال') || lowerText.includes('عالی') || lowerText.includes('😊')) {
+                return 'happy';
+            } else if (lowerText.includes('فکر') || lowerText.includes('🤔') || lowerText.includes('چطور')) {
+                return 'thinking';
+            } else if (lowerText.includes('هیجان') || lowerText.includes('🎉') || lowerText.includes('واو')) {
+                return 'excited';
+            } else if (lowerText.includes('غمگین') || lowerText.includes('😢') || lowerText.includes('متاسف')) {
+                return 'sad';
+            }
+            return 'happy';
+        }
+        
+        function init() {
+            // صحنه
+            scene = new THREE.Scene();
+            
+            // دوربین
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 2, 5);
+            
+            // رندرر
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x667eea);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            // نورپردازی
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+            
+            const pointLight = new THREE.PointLight(0xffffff, 0.3);
+            pointLight.position.set(-10, -10, -10);
+            scene.add(pointLight);
+            
+            // روباه
+            createFox();
+            
+            // زمین
+            const groundGeometry = new THREE.PlaneGeometry(20, 20);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x4A5D23 });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -1.5;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            // کنترل‌ها
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enablePan = false;
+            controls.minDistance = 3;
+            controls.maxDistance = 10;
+            controls.minPolarAngle = Math.PI / 6;
+            controls.maxPolarAngle = Math.PI - Math.PI / 6;
+            
+            // شروع انیمیشن
+            animate();
+            
+            // راه‌اندازی چت
+            initChat();
+            
+            // شروع شبیه‌سازی فعالیت مغز
+            simulateBrainActivity();
+            updateBrainStatus();
+        }
+        
+        function createFox() {
+            fox = new THREE.Group();
+            
+            // بدن
+            const bodyGeometry = new THREE.SphereGeometry(0.7, 12, 8);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: emotionColors[currentEmotion] });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.set(0, 0, 0);
+            body.castShadow = true;
+            fox.add(body);
+            fox.body = body;
+            
+            // سر
+            const headGroup = new THREE.Group();
+            const headGeometry = new THREE.SphereGeometry(0.5, 12, 8);
+            const headMaterial = new THREE.MeshLambertMaterial({ color: emotionColors[currentEmotion] });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.castShadow = true;
+            headGroup.add(head);
+            headGroup.position.set(0, 0.8, 0.2);
+            fox.add(headGroup);
+            fox.head = headGroup;
+            fox.headMesh = head;
+            
+            // چشم‌ها
+            const eyeGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+            const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+            
+            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            leftEye.position.set(-0.2, 0.1, 0.4);
+            leftEye.castShadow = true;
+            headGroup.add(leftEye);
+            
+            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            rightEye.position.set(0.2, 0.1, 0.4);
+            rightEye.castShadow = true;
+            headGroup.add(rightEye);
+            
+            // مردمک‌ها
+            const pupilGeometry = new THREE.SphereGeometry(0.04, 8, 8);
+            const pupilMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+            
+            const leftPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            leftPupil.position.set(-0.2, 0.1, 0.48);
+            headGroup.add(leftPupil);
+            
+            const rightPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+            rightPupil.position.set(0.2, 0.1, 0.48);
+            headGroup.add(rightPupil);
+            
+            // گوش‌ها
+            const earGeometry = new THREE.ConeGeometry(0.12, 0.5, 6);
+            const earMaterial = new THREE.MeshLambertMaterial({ color: emotionColors[currentEmotion] });
+            
+            const leftEar = new THREE.Mesh(earGeometry, earMaterial);
+            leftEar.position.set(-0.3, 0.35, -0.1);
+            leftEar.rotation.z = -0.3;
+            leftEar.castShadow = true;
+            headGroup.add(leftEar);
+            fox.leftEar = leftEar;
+            
+            const rightEar = new THREE.Mesh(earGeometry, earMaterial);
+            rightEar.position.set(0.3, 0.35, -0.1);
+            rightEar.rotation.z = 0.3;
+            rightEar.castShadow = true;
+            headGroup.add(rightEar);
+            fox.rightEar = rightEar;
+            
+            // بینی
+            const noseGeometry = new THREE.SphereGeometry(0.03, 6, 6);
+            const noseMaterial = new THREE.MeshLambertMaterial({ color: 0x2C3E50 });
+            const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+            nose.position.set(0, -0.05, 0.55);
+            headGroup.add(nose);
+            
+            // دم
+            const tailGroup = new THREE.Group();
+            
+            const tail1Geometry = new THREE.SphereGeometry(0.15, 8, 6);
+            const tail1Material = new THREE.MeshLambertMaterial({ color: emotionColors[currentEmotion] });
+            const tail1 = new THREE.Mesh(tail1Geometry, tail1Material);
+            tail1.position.set(0, 0, -0.2);
+            tail1.castShadow = true;
+            tailGroup.add(tail1);
+            
+            const tail2Geometry = new THREE.SphereGeometry(0.18, 8, 6);
+            const tail2Material = new THREE.MeshLambertMaterial({ color: emotionColors[currentEmotion] });
+            const tail2 = new THREE.Mesh(tail2Geometry, tail2Material);
+            tail2.position.set(0, 0.1, -0.5);
+            tail2.castShadow = true;
+            tailGroup.add(tail2);
+            
+            tailGroup.position.set(0, 0.1, -0.8);
+            fox.add(tailGroup);
+            fox.tail = tailGroup;
+            
+            // پاها
+            const legGeometry = new THREE.CylinderGeometry(0.08, 0.1, 0.5, 8);
+            const legMaterial = new THREE.MeshLambertMaterial({ color: emotionColors[currentEmotion] });
+            
+            const legs = [];
+            const legPositions = [
+                [-0.3, -0.6, 0.3],
+                [0.3, -0.6, 0.3],
+                [-0.3, -0.6, -0.3],
+                [0.3, -0.6, -0.3]
+            ];
+            
+            legPositions.forEach((pos, i) => {
+                const leg = new THREE.Mesh(legGeometry, legMaterial);
+                leg.position.set(...pos);
+                leg.castShadow = true;
+                fox.add(leg);
+                legs.push(leg);
+            });
+            fox.legs = legs;
+            
+            fox.position.set(0, -0.3, 0);
+            scene.add(fox);
+        }
+        
+        function changeEmotion(emotion) {
+            currentEmotion = emotion;
+            const color = emotionColors[emotion];
+            
+            // تغییر رنگ همه قسمت‌ها
+            fox.body.material.color.setHex(color);
+            fox.headMesh.material.color.setHex(color);
+            fox.leftEar.material.color.setHex(color);
+            fox.rightEar.material.color.setHex(color);
+            fox.tail.children.forEach(child => {
+                child.material.color.setHex(color);
+            });
+            fox.legs.forEach(leg => {
+                leg.material.color.setHex(color);
+            });
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = Date.now() * 0.001;
+            
+            if (fox) {
+                // انیمیشن تنفس
+                fox.scale.y = 1 + Math.sin(time * 2) * 0.02;
+                fox.rotation.y = Math.sin(time * 0.5) * 0.05;
+                
+                // انیمیشن سر
+                fox.head.rotation.x = Math.sin(time * 1.5) * 0.03;
+                fox.head.rotation.y = Math.sin(time * 0.8) * 0.08;
+                
+                // انیمیشن اضافی وقتی صحبت میکنه
+                if (isTyping) {
+                    fox.head.rotation.z = Math.sin(time * 8) * 0.05;
+                    fox.scale.y = 1 + Math.sin(time * 4) * 0.03;
+                }
+                
+                // انیمیشن دم
+                fox.tail.rotation.z = Math.sin(time * 3) * 0.4;
+                fox.tail.rotation.y = Math.sin(time * 2) * 0.3;
+            }
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        // راه‌اندازی چت
+        function initChat() {
+            const chatInput = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-btn');
+            const chatMessages = document.getElementById('chat-messages');
+            const chatStatus = document.getElementById('chat-status');
+            const chatContainer = document.getElementById('chat-container');
+            const minimizeBtn = document.getElementById('minimize-btn');
+            const chatTitle = document.getElementById('chat-title');
+            const chatHeader = document.getElementById('chat-header');
+            
+            // پنل وضعیت مغز
+            const brainStatus = document.getElementById('brain-status');
+            const brainMinimizeBtn = document.getElementById('brain-minimize-btn');
+            const brainTitle = document.getElementById('brain-title');
+            const brainHeader = document.getElementById('brain-header');
+            
+            let isChatMinimized = false;
+            let isBrainMinimized = false;
+            
+            // فعال کردن drag & drop
+            makeDraggable(chatContainer, chatHeader);
+            makeDraggable(brainStatus, brainHeader);
+            
+            // دکمه minimize چت
+            minimizeBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // جلوگیری از trigger شدن drag
+                isChatMinimized = !isChatMinimized;
+                if (isChatMinimized) {
+                    chatContainer.classList.add('minimized');
+                    minimizeBtn.textContent = '+';
+                    minimizeBtn.title = 'بزرگ کردن';
+                } else {
+                    chatContainer.classList.remove('minimized');
+                    minimizeBtn.textContent = '−';
+                    minimizeBtn.title = 'کوچک کردن';
+                }
+            });
+            
+            // دکمه minimize پنل مغز
+            brainMinimizeBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // جلوگیری از trigger شدن drag
+                isBrainMinimized = !isBrainMinimized;
+                if (isBrainMinimized) {
+                    brainStatus.classList.add('minimized');
+                    brainMinimizeBtn.textContent = '+';
+                    brainMinimizeBtn.title = 'بزرگ کردن';
+                    brainTitle.textContent = '🧠 مغز';
+                } else {
+                    brainStatus.classList.remove('minimized');
+                    brainMinimizeBtn.textContent = '−';
+                    brainMinimizeBtn.title = 'کوچک کردن';
+                    brainTitle.textContent = '🧠 وضعیت مغز';
+                }
+            });
+            
+            // دوبل کلیک روی header برای toggle minimize
+            chatHeader.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                minimizeBtn.click();
+            });
+            
+            brainHeader.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                brainMinimizeBtn.click();
+            });
+            
+            // ارسال پیام با Enter
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // ارسال پیام با کلیک
+            sendBtn.addEventListener('click', sendMessage);
+            
+            async function sendMessage() {
+                const message = chatInput.value.trim();
+                if (!message || isTyping) return;
+                
+                // اگه minimize هست، باز کن
+                if (isChatMinimized) {
+                    minimizeBtn.click();
+                }
+                
+                // نمایش پیام کاربر
+                addMessage(message, 'user');
+                chatInput.value = '';
+                
+                // شروع typing
+                isTyping = true;
+                sendBtn.disabled = true;
+                chatStatus.innerHTML = '<span class="typing">🦊 روباه در حال تایپ...</span>';
+                changeEmotion('thinking');
+                
+                try {
+                    // ارسال به backend
+                    const response = await fetch('http://localhost:8000/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            user_id: 'web-3d-user'
+                        }),
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const foxResponse = data.response || 'متأسفم، نتونستم پاسخ بدم.';
+                        
+                        // آپدیت آمار مکالمات
+                        conversationCount++;
+                        shortMemory = Math.min(20, shortMemory + 1);
+                        if (conversationCount % 10 === 0) {
+                            brainLevel = Math.min(20, brainLevel + 1);
+                        }
+                        updateBrainStatus();
+                        
+                        // تشخیص احساسات از پاسخ
+                        const emotion = detectEmotion(foxResponse);
+                        changeEmotion(emotion);
+                        
+                        // نمایش پاسخ روباه
+                        addMessage(foxResponse, 'fox');
+                        chatStatus.textContent = 'آماده برای چت';
+                    } else {
+                        throw new Error('خطا در ارتباط با سرور');
+                    }
+                } catch (error) {
+                    console.error('Chat error:', error);
+                    addMessage('متأسفم، مشکلی پیش اومده. لطفاً دوباره تلاش کن.', 'fox');
+                    changeEmotion('sad');
+                    chatStatus.textContent = 'خطا در اتصال';
+                }
+                
+                // پایان typing
+                isTyping = false;
+                sendBtn.disabled = false;
+            }
+            
+            function addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+                messageDiv.textContent = text;
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // اگه پیام جدید اومد و minimize هست، یه نشانه بده
+                if (isChatMinimized && sender === 'fox') {
+                    chatTitle.innerHTML = '<span>🦊</span><span>پیام جدید!</span>';
+                    setTimeout(() => {
+                        if (isChatMinimized) {
+                            chatTitle.innerHTML = '<span>🦊</span><span>چت با روباه</span>';
+                        }
+                    }, 3000);
+                }
+            }
+        }
+        
+        // تنظیم اندازه
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // شروع
+        init();
+    </script>
+</body>
+</html>
