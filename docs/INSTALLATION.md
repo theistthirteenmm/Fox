@@ -1,95 +1,125 @@
-# 🛠️ نصب و راه‌اندازی روباه
+# Installation Guide
 
-## 📋 پیش‌نیازها
+## Requirements
 
-### 🐍 Python 3.11+
-```bash
-python --version
+- Python 3.8+
+- [Ollama](https://ollama.ai)
+- 8GB RAM (minimum)
+
+---
+
+## 1. Install Ollama
+
+### Windows
+```cmd
+winget install Ollama.Ollama
 ```
 
-### 🦙 Ollama
+### macOS
 ```bash
-# Windows
-winget install Ollama.Ollama
-
-# macOS
 brew install ollama
+```
 
-# Linux
+### Linux
+```bash
 curl -fsSL https://ollama.ai/install.sh | sh
 ```
 
-### 📦 Node.js 18+
-```bash
-node --version
-npm --version
-```
+---
 
-## 🚀 نصب سریع
+## 2. Download AI Model
 
-### 1️⃣ کلون پروژه:
-```bash
-git clone https://github.com/your-repo/robah.git
-cd robah
-```
-
-### 2️⃣ اجرای اسکریپت نصب:
-
-#### Windows:
-```cmd
-start.bat
-```
-
-#### Linux/macOS:
-```bash
-chmod +x start_robah.sh
-./start_robah.sh
-```
-
-## 🔧 نصب دستی
-
-### 1️⃣ محیط مجازی Python:
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-venv\Scripts\activate     # Windows
-```
-
-### 2️⃣ نصب dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-### 3️⃣ دانلود مدل AI:
 ```bash
 ollama pull partai/dorna-llama3:8b-instruct-q8_0
 ```
 
-### 4️⃣ نصب frontend:
+---
+
+## 3. Install Fox CLI
+
+### From GitHub
 ```bash
-cd frontend
-npm install
-cd ..
+pip install git+https://github.com/theist.thirteenmm/Fox.git
 ```
 
-### 5️⃣ راه‌اندازی:
+### With Audio Support
 ```bash
-# Terminal 1 - Backend
-python -m backend.main
-
-# Terminal 2 - Frontend  
-cd frontend
-npm start
+pip install "git+https://github.com/theist.thirteenmm/Fox.git#egg=fox-ai[audio]"
 ```
 
-## ✅ تست نصب
-
-### 🌐 دسترسی:
-- Frontend: http://localhost:3000
-- Backend: http://localhost:8000
-- API Status: http://localhost:8000/status
-
-### 🧪 تست سریع:
+### Local Development
 ```bash
+git clone https://github.com/theist.thirteenmm/Fox.git
+cd Fox
+pip install -e .
+```
+
+---
+
+## 4. Start Server
+
+### Windows
+```cmd
+scripts\start.bat
+```
+
+### Linux/macOS
+```bash
+./scripts/start.sh
+```
+
+---
+
+## 5. Run CLI
+
+```bash
+fox
+```
+
+---
+
+## Verify Installation
+
+```bash
+# Check CLI
+fox --version
+
+# Check server
 curl http://localhost:8000/status
 ```
+
+---
+
+## Configuration
+
+Config file: `~/.fox/config.json`
+
+```json
+{
+  "server": "localhost:8000",
+  "voice_enabled": false,
+  "typing_effect": true
+}
+```
+
+Set server address:
+```bash
+fox config --server 192.168.1.100:8000
+```
+
+---
+
+## Troubleshooting
+
+### Ollama not running
+```bash
+ollama serve
+```
+
+### Model not found
+```bash
+ollama pull partai/dorna-llama3:8b-instruct-q8_0
+```
+
+### Connection refused
+Check if server is running on correct port.
