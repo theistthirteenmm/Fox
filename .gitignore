@@ -1,4 +1,4 @@
-# 🦊 روباه - فایل‌های نادیده Git
+# Robah - Git Ignore
 
 # ===== Python =====
 __pycache__/
@@ -7,28 +7,14 @@ __pycache__/
 *.so
 .Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
 *.egg
 MANIFEST
 
 # ===== Virtual Environment =====
 venv/
 env/
-ENV/
-env.bak/
-venv.bak/
 
 # ===== IDE =====
 .vscode/
@@ -36,22 +22,6 @@ venv.bak/
 *.swp
 *.swo
 *~
-
-# ===== Node.js =====
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.npm
-.yarn-integrity
-
-# ===== Frontend Build =====
-frontend/build/
-frontend/dist/
-frontend/.env.local
-frontend/.env.development.local
-frontend/.env.test.local
-frontend/.env.production.local
 
 # ===== Data & Logs =====
 data/memory/
@@ -62,11 +32,6 @@ logs/
 
 # ===== OS =====
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 desktop.ini
 
@@ -74,8 +39,6 @@ desktop.ini
 *.tmp
 *.temp
 *.bak
-*.backup
-*.old
 .cache/
 
 # ===== Security =====
@@ -83,29 +46,20 @@ desktop.ini
 .env.local
 *.key
 *.pem
-*.p12
 config/secrets.py
 
 # ===== Database =====
 *.db
 *.sqlite
 *.sqlite3
-chroma.sqlite3
 
-# ===== AI Models (اختیاری) =====
+# ===== AI Models =====
 models/
 *.bin
 *.safetensors
-
-# ===== Ollama Cache =====
 .ollama/
 
-# ===== Custom =====
-# فایل‌های شخصی‌سازی شده
-data/personality/custom_*
-data/datasets/user_*
-
-# ===== Personal Data (نباید commit شود) =====
+# ===== Personal Data =====
 data/cli_history.txt
 data/learning/*.jsonl
 data/personality/*.jsonl
