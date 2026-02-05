@@ -1,8 +1,7 @@
 """
-Robah Audio Handler
+Fox Audio Handler
 """
 
-import os
 import time
 import tempfile
 from pathlib import Path
@@ -13,7 +12,6 @@ AUDIO_AVAILABLE = False
 try:
     import sounddevice as sd
     import soundfile as sf
-    import numpy as np
     AUDIO_AVAILABLE = True
 except ImportError:
     pass
@@ -24,7 +22,7 @@ class AudioHandler:
 
     def __init__(self):
         self.sample_rate = 16000
-        self.temp_dir = Path(tempfile.gettempdir()) / "robah_audio"
+        self.temp_dir = Path(tempfile.gettempdir()) / "fox_audio"
         self.temp_dir.mkdir(parents=True, exist_ok=True)
 
     @property

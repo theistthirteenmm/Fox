@@ -1,13 +1,12 @@
 """
-Robah CLI Configuration
+Fox CLI Configuration
 """
 
-import os
 import json
 from pathlib import Path
 
 # پوشه تنظیمات
-CONFIG_DIR = Path.home() / ".robah"
+CONFIG_DIR = Path.home() / ".fox"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
 DEFAULT_CONFIG = {

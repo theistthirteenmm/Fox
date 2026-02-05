@@ -1,5 +1,5 @@
 """
-Robah CLI - Main Interface
+Fox CLI - Main Interface
 """
 
 import sys
@@ -9,7 +9,7 @@ import threading
 import argparse
 
 from .config import load_config, save_config, get_server_url
-from .client import RobahClient
+from .client import FoxClient
 from .audio import AudioHandler, AUDIO_AVAILABLE
 
 # رنگ‌ها
@@ -23,12 +23,12 @@ except ImportError:
     Fore = Style = _NoColor()
 
 
-class RobahCLI:
-    """رابط خط فرمان روباه"""
+class FoxCLI:
+    """رابط خط فرمان"""
 
     def __init__(self):
         self.config = load_config()
-        self.client = RobahClient()
+        self.client = FoxClient()
         self.audio = AudioHandler()
         self.thinking = False
         self.is_tty = sys.stdout.isatty()
@@ -48,8 +48,8 @@ class RobahCLI:
     ╭─────────────────────────────╮
     │                             │
     │        /\\_/\\               │
-    │       (  o.o  )   Robah     │
-    │        > ^ <     v1.0      │
+    │       (  o.o  )    Fox      │
+    │        > ^ <      v1.0     │
     │                             │
     ╰─────────────────────────────╯
 {self.reset}""")
@@ -96,7 +96,7 @@ class RobahCLI:
         self.stop_thinking()
 
         if response is None:
-            return "خطا در اتصال به سرور"
+            return "Connection error"
         return response
 
     def cmd_help(self):
@@ -136,7 +136,7 @@ class RobahCLI:
         """تنظیم آدرس سرور"""
         self.config["server"] = url
         save_config(self.config)
-        self.client = RobahClient(f"http://{url}")
+        self.client = FoxClient(f"http://{url}")
         print(f"{self.dim}Server set to: {url}{self.reset}")
 
     def cmd_voice_toggle(self):
@@ -220,7 +220,7 @@ class RobahCLI:
         # بررسی سرور
         if not self.client.is_available():
             print(f"{self.warn}Server not available at {get_server_url()}")
-            print(f"Start server or set address with: robah config --server <host:port>{self.reset}")
+            print(f"Start server or set address with: fox config --server <host:port>{self.reset}")
             print()
 
         self.banner()
@@ -271,8 +271,8 @@ class RobahCLI:
 def main():
     """نقطه ورود اصلی"""
     parser = argparse.ArgumentParser(
-        description="Robah - Persian AI Assistant",
-        prog="robah"
+        description="Fox - Persian AI Assistant",
+        prog="fox"
     )
     parser.add_argument(
         "message",
@@ -297,14 +297,14 @@ def main():
     parser.add_argument(
         "--version",
         action="version",
-        version="Robah CLI v1.0.0"
+        version="Fox CLI v1.0.0"
     )
 
     # زیردستورات
     subparsers = parser.add_subparsers(dest="command")
 
     # config
-    config_parser = subparsers.add_parser("config", help="Configure Robah")
+    config_parser = subparsers.add_parser("config", help="Configure Fox")
     config_parser.add_argument("--server", help="Set server address")
     config_parser.add_argument("--show", action="store_true", help="Show config")
 
@@ -322,7 +322,7 @@ def main():
         config["voice_enabled"] = True
         save_config(config)
 
-    cli = RobahCLI()
+    cli = FoxCLI()
 
     # زیردستور config
     if args.command == "config":

@@ -1,5 +1,5 @@
 """
-Robah CLI - Entry point for `python -m robah`
+Fox CLI - Entry point for `python -m fox_cli`
 """
 
 from .cli import main

@@ -1,5 +1,5 @@
 """
-Robah API Client
+Fox API Client
 """
 
 import requests
@@ -7,8 +7,8 @@ from typing import Optional
 from .config import get_server_url
 
 
-class RobahClient:
-    """کلاینت برای اتصال به سرور روباه"""
+class FoxClient:
+    """کلاینت برای اتصال به سرور"""
 
     def __init__(self, server_url: Optional[str] = None):
         self.server_url = server_url or get_server_url()

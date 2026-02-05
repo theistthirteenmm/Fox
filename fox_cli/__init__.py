@@ -1,5 +1,5 @@
 """
-Robah - Persian AI Assistant CLI
+Fox - Persian AI Assistant CLI
 """
 
 __version__ = "1.0.0"
