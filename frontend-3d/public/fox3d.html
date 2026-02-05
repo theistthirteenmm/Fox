@@ -863,6 +863,8 @@
         
         // راه‌اندازی چت
         function initChat() {
+            const isDirectDev = window.location.port === '3001';
+            const API_BASE = isDirectDev ? 'http://localhost:8000' : '/api';
             const chatInput = document.getElementById('chat-input');
             const sendBtn = document.getElementById('send-btn');
             const chatMessages = document.getElementById('chat-messages');
@@ -960,7 +962,7 @@
                 
                 try {
                     // ارسال به backend
-                    const response = await fetch('http://localhost:8000/chat', {
+                    const response = await fetch(`${API_BASE}/chat`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

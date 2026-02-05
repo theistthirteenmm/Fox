@@ -113,8 +113,17 @@ interface SystemStatus {
   brain_loaded: boolean;
   memory_size: { short_term: number; conversations: number; knowledge: number };
   personality_level: number;
+  model_policy?: {
+    allow_heavy: boolean;
+    current_model: string;
+  };
   timestamp: string;
 }
+
+const isDirectDev = window.location.port === '3000' || window.location.port === '3001';
+const API_BASE = isDirectDev ? 'http://localhost:8000' : '/api';
+const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+const WS_BASE = isDirectDev ? 'ws://localhost:8000' : `${wsProtocol}://${window.location.host}`;
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -122,6 +131,7 @@ function App() {
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [autoPlayEnabled, setAutoPlayEnabled] = useState(false); // حالت پخش خودکار
+  const [isUpdatingModelPolicy, setIsUpdatingModelPolicy] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
   const isConnectingRef = useRef(false);
@@ -158,7 +168,7 @@ function App() {
     isConnectingRef.current = true;
 
     try {
-      const ws = new WebSocket('ws://localhost:8000/chat');
+      const ws = new WebSocket(`${WS_BASE}/chat`);
       
       ws.onopen = () => {
         console.log('🔗 اتصال برقرار شد');
@@ -249,7 +259,7 @@ function App() {
 
   const fetchSystemStatus = async () => {
     try {
-      const response = await fetch('http://localhost:8000/status');
+      const response = await fetch(`${API_BASE}/status`);
       if (response.ok) {
         const status = await response.json();
         setSystemStatus(status);
@@ -259,12 +269,40 @@ function App() {
     }
   };
 
+  const updateModelPolicy = async (allowHeavy: boolean) => {
+    if (isUpdatingModelPolicy) return;
+    
+    try {
+      setIsUpdatingModelPolicy(true);
+      const response = await fetch(`${API_BASE}/models/policy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allow_heavy: allowHeavy })
+      });
+      
+      if (response.ok) {
+        const updated = await response.json();
+        setSystemStatus(prev => prev ? {
+          ...prev,
+          model_policy: {
+            allow_heavy: updated.allow_heavy,
+            current_model: updated.current_model
+          }
+        } : prev);
+      }
+    } catch (error) {
+      console.error('خطا در به‌روزرسانی سیاست مدل:', error);
+    } finally {
+      setIsUpdatingModelPolicy(false);
+    }
+  };
+
   const playTextToSpeech = async (text: string) => {
     try {
       const formData = new FormData();
       formData.append('text', text);
 
-      const response = await fetch('http://localhost:8000/speech/text-to-speech', {
+      const response = await fetch(`${API_BASE}/speech/text-to-speech`, {
         method: 'POST',
         body: formData,
       });
@@ -324,6 +362,8 @@ function App() {
       <StatusBar 
         isConnected={isConnected}
         systemStatus={systemStatus}
+        onToggleHeavyModels={updateModelPolicy}
+        isUpdatingModelPolicy={isUpdatingModelPolicy}
       />
       
       <MainContent>

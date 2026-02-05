@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# تغییر به دایرکتوری پروژه (یک سطح بالاتر از scripts)
+cd "$(dirname "$0")/.."
+
 # رنگ‌ها برای خروجی
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -217,6 +220,10 @@ cleanup() {
     if [[ ! -z $FRONTEND_PID ]]; then
         kill $FRONTEND_PID 2>/dev/null
     fi
+
+    if [[ ! -z $FRONTEND_3D_PID ]]; then
+        kill $FRONTEND_3D_PID 2>/dev/null
+    fi
     
     if [[ ! -z $OLLAMA_PID ]]; then
         kill $OLLAMA_PID 2>/dev/null
@@ -261,14 +268,31 @@ cd ..
 print_status "صبر برای راه‌اندازی Frontend..."
 sleep 10
 
+# راه‌اندازی Frontend 3D
+print_status "راه‌اندازی Frontend 3D..."
+cd frontend-3d
+npm start &
+FRONTEND_3D_PID=$!
+cd ..
+
+# انتظار برای راه‌اندازی Frontend 3D
+print_status "صبر برای راه‌اندازی Frontend 3D..."
+sleep 10
+
+# راه‌اندازی Nginx
+print_status "راه‌اندازی Nginx..."
+./scripts/start_nginx.sh
+
 echo
 echo "==============================================="
 echo "🎉 روباه آماده است!"
 echo "==============================================="
 echo
-print_success "🌐 رابط وب:     http://localhost:3000"
-print_success "🔧 API Backend:  http://localhost:8000"
-print_success "📚 مستندات:     http://localhost:8000/docs"
+print_success "🌐 رابط اصلی (Nginx):  http://localhost:8080"
+print_success "🧊 رابط سه‌بعدی:       http://localhost:8080/3d/"
+print_success "🌐 رابط وب مستقیم:     http://localhost:3000"
+print_success "🔧 API Backend:        http://localhost:8000"
+print_success "📚 مستندات:           http://localhost:8000/docs"
 echo
 print_info "💡 نکات مهم:"
 echo "   • برای توقف سرویس‌ها، Ctrl+C را فشار دهید"
@@ -282,9 +306,9 @@ if [[ -n "$DISPLAY" ]] || [[ "$OSTYPE" == "darwin"* ]]; then
     sleep 3
     
     if command_exists xdg-open; then
-        xdg-open http://localhost:3000 >/dev/null 2>&1
+        xdg-open http://localhost:8080 >/dev/null 2>&1
     elif command_exists open; then
-        open http://localhost:3000 >/dev/null 2>&1
+        open http://localhost:8080 >/dev/null 2>&1
     fi
 fi
 

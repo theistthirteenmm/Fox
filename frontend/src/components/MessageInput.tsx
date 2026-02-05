@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 
+const isDirectDev = window.location.port === '3000' || window.location.port === '3001';
+const API_BASE = isDirectDev ? 'http://localhost:8000' : '/api';
+
 const InputContainer = styled.div`
   padding: 1.5rem;
   background: rgba(255, 255, 255, 0.1);
@@ -311,7 +314,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         setUploadStatus(`آپلود ${file.name} - ${speedFormatted}/s`);
       }, 150);
 
-      const response = await fetch('http://localhost:8000/files/upload', {
+      const response = await fetch(`${API_BASE}/files/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -403,7 +406,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         try {
           setRecordingStatus('🔄 در حال تبدیل صدا به متن...');
           
-          const response = await fetch('http://localhost:8000/speech/speech-to-text', {
+          const response = await fetch(`${API_BASE}/speech/speech-to-text`, {
             method: 'POST',
             body: formData,
           });

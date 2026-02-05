@@ -3,8 +3,8 @@
 شامل تمام اجزای هوش مصنوعی
 """
 
-from .core import AIBrain
-from .memory import MemoryManager  
-from .personality import PersonalityEngine
+from .core.core import AIBrain
+from .core.memory import MemoryManager  
+from .core.personality import PersonalityEngine
 
 __all__ = ['AIBrain', 'MemoryManager', 'PersonalityEngine']

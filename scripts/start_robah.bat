@@ -3,6 +3,9 @@ setlocal enabledelayedexpansion
 chcp 65001 >nul
 title 🦊 روباه - دستیار هوش مصنوعی
 
+:: تغییر به دایرکتوری پروژه (یک سطح بالاتر از scripts)
+cd /d "%~dp0\.."
+
 echo.
 echo ===============================================
 echo 🦊 روباه - دستیار هوش مصنوعی شخصی
@@ -56,7 +59,7 @@ echo %BLUE%🔍 بررسی مدل AI...%RESET%
 curl -s http://localhost:11434/api/tags > temp_models.txt 2>nul
 findstr "partai/dorna-llama3" temp_models.txt >nul 2>&1
 if %errorlevel% neq 0 (
-    echo %YELLOW%⚠️  مدل فارسی یافت نشد. آیا می‌خواهید دانلود کنید؟ (y/n)%RESET%
+    echo %YELLOW%⚠️  مدل فارسی یافت نشد. آیا می‌خواهید دانلود کنید؟ ^(y/n^) %RESET%
     set /p download_model="پاسخ: "
     if /i "!download_model!"=="y" (
         echo %BLUE%📥 در حال دانلود مدل فارسی...%RESET%
@@ -84,7 +87,7 @@ if not exist "venv\Scripts\activate.bat" (
 :: فعال‌سازی Virtual Environment و نصب dependencies
 echo %BLUE%📦 نصب Python Dependencies...%RESET%
 call venv\Scripts\activate.bat
-pip install -r requirements.txt --quiet
+venv\Scripts\python -X utf8 -m pip install -r requirements.txt --quiet
 if %errorlevel% neq 0 (
     echo %RED%❌ خطا در نصب Python packages%RESET%
     pause
@@ -153,14 +156,30 @@ cd ..
 echo %BLUE%⏳ صبر برای راه‌اندازی Frontend...%RESET%
 timeout /t 10 /nobreak >nul
 
+:: Frontend 3D
+echo %BLUE%🧊 راه‌اندازی Frontend 3D...%RESET%
+cd frontend-3d
+start "🦊 Robah Frontend 3D" cmd /k "title 🦊 Robah Frontend 3D && npm start"
+cd ..
+
+:: انتظار برای راه‌اندازی Frontend 3D
+echo %BLUE%⏳ صبر برای راه‌اندازی Frontend 3D...%RESET%
+timeout /t 10 /nobreak >nul
+
+:: Nginx
+echo %BLUE%🌐 راه‌اندازی Nginx...%RESET%
+start "🦊 Robah Nginx" cmd /k "title 🦊 Robah Nginx && call scripts\start_nginx.bat"
+
 echo.
 echo ===============================================
 echo 🎉 روباه آماده است!
 echo ===============================================
 echo.
-echo %GREEN%🌐 رابط وب:%RESET%     http://localhost:3000
-echo %GREEN%🔧 API Backend:%RESET%  http://localhost:8000
-echo %GREEN%📚 مستندات:%RESET%     http://localhost:8000/docs
+echo %GREEN%🌐 رابط اصلی (Nginx):%RESET%  http://localhost:8080
+echo %GREEN%🧊 رابط سه‌بعدی:%RESET%       http://localhost:8080/3d/
+echo %GREEN%🌐 رابط وب مستقیم:%RESET%     http://localhost:3000
+echo %GREEN%🔧 API Backend:%RESET%        http://localhost:8000
+echo %GREEN%📚 مستندات:%RESET%           http://localhost:8000/docs
 echo.
 echo %BLUE%💡 نکات مهم:%RESET%
 echo   • برای توقف سرویس‌ها، پنجره‌های terminal را ببندید
@@ -171,7 +190,7 @@ echo.
 :: باز کردن مرورگر
 echo %BLUE%🌐 باز کردن مرورگر...%RESET%
 timeout /t 3 /nobreak >nul
-start http://localhost:3000
+start http://localhost:8080
 
 echo.
 echo %GREEN%✨ لذت ببرید از چت با روباه! 🦊%RESET%

@@ -1,6 +1,12 @@
 #!/bin/bash
 
+# تغییر به دایرکتوری پروژه (یک سطح بالاتر از scripts)
+cd "$(dirname "$0")/.."
+
 echo "🛑 توقف سرویس‌های روباه..."
+
+# توقف Nginx
+./scripts/stop_nginx.sh >/dev/null 2>&1
 
 # توقف فرآیندهای Python (Backend)
 echo "🐍 توقف Backend..."
@@ -29,6 +35,12 @@ fi
 PORT_3000_PID=$(lsof -ti:3000 2>/dev/null)
 if [[ ! -z "$PORT_3000_PID" ]]; then
     kill -9 $PORT_3000_PID 2>/dev/null
+fi
+
+# پیدا کردن و کشتن فرآیندهای استفاده کننده از پورت 3001
+PORT_3001_PID=$(lsof -ti:3001 2>/dev/null)
+if [[ ! -z "$PORT_3001_PID" ]]; then
+    kill -9 $PORT_3001_PID 2>/dev/null
 fi
 
 echo "✅ تمام سرویس‌های روباه متوقف شدند!"

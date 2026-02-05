@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ChatInterface.css';
 
+const isDirectDev = window.location.port === '3000' || window.location.port === '3001';
+const API_BASE = isDirectDev ? 'http://localhost:8000' : '/api';
+
 interface ChatInterfaceProps {
   onListeningChange: (listening: boolean) => void;
   onSpeakingChange: (speaking: boolean) => void;
@@ -57,7 +60,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     onEmotionChange('thinking');
 
     try {
-      const response = await fetch('http://localhost:8000/chat', {
+      const response = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

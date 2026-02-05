@@ -54,12 +54,11 @@ frontend/.env.test.local
 frontend/.env.production.local
 
 # ===== Data & Logs =====
-data/memory/*.sqlite3
-data/memory/*.db
-data/learning/*.jsonl
-data/personality/*.jsonl
-logs/*.log
-logs/*.txt
+data/memory/
+data/temp/
+data/cli_audio/
+data/uploads/
+logs/
 
 # ===== OS =====
 .DS_Store
@@ -105,3 +104,10 @@ models/
 # فایل‌های شخصی‌سازی شده
 data/personality/custom_*
 data/datasets/user_*
+
+# ===== Personal Data (نباید commit شود) =====
+data/cli_history.txt
+data/learning/*.jsonl
+data/personality/*.jsonl
+data/personality/name_learning.json
+data/personality/personal_learning.json

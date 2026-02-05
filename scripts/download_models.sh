@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# تغییر به دایرکتوری پروژه (یک سطح بالاتر از scripts)
+cd "$(dirname "$0")/.."
+
 # رنگ‌ها برای خروجی
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -13,53 +16,113 @@ echo "🦊 دانلود مدل‌های هوش مصنوعی روباه"
 echo "==============================================="
 echo
 
-echo "📋 مدل‌های مورد نیاز:"
-echo "  1. llama4:scout (مدل قدرتمند - ~50GB)"
-echo "  2. codellama:13b (مدل کد - ~7GB)"
-echo "  3. llama4:scout-q4 (مدل سریع - ~10GB)"
-echo "  4. partai/dorna-llama3:8b-instruct-q8_0 (فارسی - موجود)"
+# تنظیم مسیر مدل‌ها
+export OLLAMA_MODELS="$(pwd)/models"
+echo -e "${BLUE}📁 مسیر مدل‌ها: $OLLAMA_MODELS${NC}"
+echo
+
+# ایجاد پوشه مدل‌ها
+mkdir -p models
+
+echo "📋 مدل‌های پیشنهادی روباه:"
+echo
+echo -e "${YELLOW}  🔥 ضروری:${NC}"
+echo "  1. partai/dorna-llama3:8b-instruct-q8_0 (فارسی - 8.5GB)"
+echo "  2. llama3.2:3b (سریع - 2GB)"
+echo
+echo -e "${BLUE}  🚀 پیشرفته:${NC}"
+echo "  3. deepseek-r1:7b (استدلال - 4GB)"
+echo "  4. deepseek-coder-v2:16b (برنامه‌نویسی - 9GB)"
+echo "  5. qwen2.5:32b (چندزبانه - 18GB)"
+echo
+echo -e "${GREEN}  💪 قدرتمند:${NC}"
+echo "  6. llama3.3:70b (بهترین - 43GB)"
 echo
 
 echo -e "${YELLOW}⚠️  توجه: دانلود ممکن است چندین ساعت طول بکشد${NC}"
-echo -e "${YELLOW}💾 فضای مورد نیاز: حدود 67 گیگابایت${NC}"
+echo -e "${YELLOW}💾 فضای کل مورد نیاز: حدود 85 گیگابایت${NC}"
 echo
 
-read -p "آیا می‌خواهید ادامه دهید؟ (y/n): " confirm
-if [[ $confirm != [yY] ]]; then
-    echo "عملیات لغو شد."
-    exit 0
-fi
-
-echo
-echo "🚀 شروع دانلود مدل‌ها..."
+echo "انتخاب کنید:"
+echo "1. دانلود مدل‌های ضروری (10.5GB)"
+echo "2. دانلود مدل‌های پیشرفته (31.5GB)"
+echo "3. دانلود همه مدل‌ها (85GB)"
+echo "4. انتخاب دستی"
+echo "0. خروج"
 echo
 
-# تابع دانلود مدل
+read -p "انتخاب شما (0-4): " choice
+
 download_model() {
     local model_name=$1
-    local size=$2
-    local time_estimate=$3
+    local description=$2
     
-    echo "==============================================="
-    echo -e "${BLUE}📥 دانلود $model_name${NC}"
-    echo "==============================================="
-    echo -e "${BLUE}📊 اندازه: $size${NC}"
-    echo -e "${BLUE}⏱️  زمان تخمینی: $time_estimate${NC}"
     echo
+    echo "==============================================="
+    echo -e "${BLUE}📥 دانلود $description: $model_name${NC}"
+    echo "==============================================="
     
     if ollama pull "$model_name"; then
         echo -e "${GREEN}✅ $model_name با موفقیت دانلود شد${NC}"
     else
         echo -e "${RED}❌ خطا در دانلود $model_name${NC}"
     fi
-    echo
 }
 
-# دانلود مدل‌ها
-download_model "llama4:scout" "~50GB" "2-4 ساعت"
-download_model "codellama:13b" "~7GB" "30-60 دقیقه"
-download_model "llama4:scout-q4" "~10GB" "45-90 دقیقه"
+case $choice in
+    1)
+        echo
+        echo "🔥 دانلود مدل‌های ضروری..."
+        download_model "partai/dorna-llama3:8b-instruct-q8_0" "مدل فارسی اصلی"
+        download_model "llama3.2:3b" "مدل سریع"
+        ;;
+    2)
+        echo
+        echo "🚀 دانلود مدل‌های پیشرفته..."
+        download_model "partai/dorna-llama3:8b-instruct-q8_0" "مدل فارسی اصلی"
+        download_model "llama3.2:3b" "مدل سریع"
+        download_model "deepseek-r1:7b" "مدل استدلال"
+        download_model "deepseek-coder-v2:16b" "مدل برنامه‌نویسی"
+        download_model "qwen2.5:32b" "مدل چندزبانه"
+        ;;
+    3)
+        echo
+        echo "💪 دانلود همه مدل‌ها..."
+        download_model "partai/dorna-llama3:8b-instruct-q8_0" "مدل فارسی اصلی"
+        download_model "llama3.2:3b" "مدل سریع"
+        download_model "deepseek-r1:7b" "مدل استدلال"
+        download_model "deepseek-coder-v2:16b" "مدل برنامه‌نویسی"
+        download_model "qwen2.5:32b" "مدل چندزبانه"
+        download_model "llama3.3:70b" "مدل قدرتمند"
+        ;;
+    4)
+        echo
+        echo "🎯 انتخاب دستی مدل‌ها:"
+        while true; do
+            echo
+            read -p "نام مدل (مثال: llama3.2:3b): " model_name
+            if [[ -z "$model_name" ]]; then
+                break
+            fi
+            download_model "$model_name" "مدل انتخابی"
+            echo
+            read -p "مدل دیگری دانلود کنید؟ (y/n): " continue_download
+            if [[ $continue_download != [yY] ]]; then
+                break
+            fi
+        done
+        ;;
+    0)
+        echo "خروج..."
+        exit 0
+        ;;
+    *)
+        echo "انتخاب نامعتبر"
+        exit 1
+        ;;
+esac
 
+echo
 echo "==============================================="
 echo "🎉 دانلود کامل شد!"
 echo "==============================================="
@@ -69,6 +132,10 @@ echo "📋 بررسی مدل‌های نصب شده:"
 ollama list
 
 echo
-echo -e "${GREEN}✅ تمام مدل‌ها آماده استفاده هستند!${NC}"
-echo -e "${GREEN}🦊 حالا می‌توانید روباه را با قابلیت‌های جدید استفاده کنید${NC}"
+echo -e "${GREEN}✅ مدل‌ها در $(pwd)/models ذخیره شدند!${NC}"
+echo -e "${GREEN}🦊 حالا می‌توانید روباه را استفاده کنید${NC}"
+echo
+
+echo "💡 برای تست مدل‌ها: ./scripts/test.bat"
+echo "💡 برای راه‌اندازی روباه: ./start.sh"
 echo

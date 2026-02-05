@@ -19,10 +19,13 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from brain.core import AIBrain
-from brain.memory import MemoryManager
-from brain.personality import PersonalityEngine
-from brain.speech_handler import speech_handler
+from brain.core.core import AIBrain
+from brain.core.user_memory import user_memory
+from brain.core.memory import MemoryManager
+from brain.core.personality import PersonalityEngine
+from brain.interfaces.speech_handler import speech_handler
+from brain.learning.dynamic_name_learning import dynamic_name_learning
+from brain.learning.personal_learning_system import personal_learning_system
 
 app = FastAPI(title="روباه AI Assistant", version="1.0.0")
 
@@ -80,6 +83,10 @@ async def get_status():
         "memory_size": memory_manager.get_memory_count(),
         "personality_level": personality_engine.get_development_level(),
         "web_search": ai_brain.get_web_status(),
+        "model_policy": {
+            "allow_heavy": ai_brain.allow_heavy_models,
+            "current_model": ai_brain.current_model
+        },
         "timestamp": datetime.now().isoformat()
     }
 
@@ -165,6 +172,32 @@ async def get_web_search_status():
     """وضعیت جستجوی وب"""
     return ai_brain.get_web_status()
 
+@app.get("/models/policy")
+async def get_model_policy():
+    """دریافت سیاست انتخاب مدل"""
+    return {
+        "allow_heavy": ai_brain.allow_heavy_models,
+        "current_model": ai_brain.current_model
+    }
+
+@app.post("/models/policy")
+async def update_model_policy(request: dict):
+    """به‌روزرسانی سیاست انتخاب مدل"""
+    try:
+        allow_heavy = request.get("allow_heavy")
+        if allow_heavy is None:
+            return {"error": "پارامتر allow_heavy الزامی است"}
+        
+        ai_brain.allow_heavy_models = bool(allow_heavy)
+        
+        return {
+            "success": True,
+            "allow_heavy": ai_brain.allow_heavy_models,
+            "current_model": ai_brain.current_model
+        }
+    except Exception as e:
+        return {"error": f"خطا در به‌روزرسانی سیاست مدل: {str(e)}"}
+
 @app.get("/dataset/stats")
 async def get_dataset_stats():
     """آمار دیتاست و یادگیری"""
@@ -172,6 +205,33 @@ async def get_dataset_stats():
         "dataset_stats": ai_brain.dataset_manager.get_stats(),
         "learning_enabled": True,
         "total_interactions": ai_brain.dataset_manager.get_stats()
+    }
+
+@app.get("/user/profile")
+async def get_user_profile():
+    """دریافت پروفایل کاربر"""
+    return {
+        "user_stats": user_memory.get_user_stats(),
+        "personal_info": user_memory.get_personal_info(),
+        "recent_conversations": user_memory.get_recent_conversations(5)
+    }
+
+@app.post("/user/name")
+async def set_user_name(name: str = Form(...)):
+    """تنظیم نام کاربر"""
+    user_memory.set_user_name(name)
+    return {
+        "success": True,
+        "message": f"نام کاربر به {name} تغییر یافت"
+    }
+
+@app.post("/user/info")
+async def add_user_info(key: str = Form(...), value: str = Form(...)):
+    """اضافه کردن اطلاعات شخصی کاربر"""
+    user_memory.add_personal_info(key, value)
+    return {
+        "success": True,
+        "message": f"اطلاعات {key} اضافه شد"
     }
 
 # 🎙️ Speech API Endpoints
@@ -520,10 +580,284 @@ async def get_dashboard_data():
     except Exception as e:
         return {"error": f"خطا در دریافت داده‌های داشبورد: {str(e)}"}
 
+@app.get("/learning/export")
+async def export_personality():
+    """صادر کردن تمام یادگیری‌ها برای backup - ایده از پرامپت"""
+    try:
+        export_data = {
+            "export_date": datetime.now().isoformat(),
+            "vocabulary": personal_learning_system.vocabulary,
+            "rules": personal_learning_system.rules,
+            "tone_preferences": personal_learning_system.tone_preferences,
+            "passive_facts": getattr(personal_learning_system, 'passive_facts', []),
+            "name_learning": {
+                "current_name": dynamic_name_learning.get_current_name(),
+                "learning_history": dynamic_name_learning.learning_history
+            },
+            "user_profile": user_memory.get_personal_info()
+        }
+        
+        return {
+            "success": True,
+            "export_data": export_data,
+            "message": "شخصیت با موفقیت صادر شد"
+        }
+        
+    except Exception as e:
+        return {"error": f"خطا در صادر کردن شخصیت: {str(e)}"}
+
+@app.post("/learning/import")
+async def import_personality(import_data: dict):
+    """وارد کردن یادگیری‌ها از backup - ایده از پرامپت"""
+    try:
+        # وارد کردن واژگان
+        if "vocabulary" in import_data:
+            personal_learning_system.vocabulary.update(import_data["vocabulary"])
+        
+        # وارد کردن قوانین
+        if "rules" in import_data:
+            personal_learning_system.rules.extend(import_data["rules"])
+        
+        # وارد کردن ترجیحات لحن
+        if "tone_preferences" in import_data:
+            personal_learning_system.tone_preferences.update(import_data["tone_preferences"])
+        
+        # وارد کردن اطلاعات غیرمستقیم
+        if "passive_facts" in import_data:
+            if not hasattr(personal_learning_system, 'passive_facts'):
+                personal_learning_system.passive_facts = []
+            personal_learning_system.passive_facts.extend(import_data["passive_facts"])
+        
+        # ذخیره تغییرات
+        personal_learning_system._save_learning_data()
+        
+        return {
+            "success": True,
+            "imported_items": {
+                "vocabulary": len(import_data.get("vocabulary", {})),
+                "rules": len(import_data.get("rules", [])),
+                "passive_facts": len(import_data.get("passive_facts", []))
+            },
+            "message": "شخصیت با موفقیت وارد شد"
+        }
+        
+    except Exception as e:
+        return {"error": f"خطا در وارد کردن شخصیت: {str(e)}"}
+
+@app.get("/learning/summary")
+async def get_learning_summary():
+    """خلاصه یادگیری‌های شخصی"""
+    try:
+        return {
+            "success": True,
+            "learning_summary": personal_learning_system.get_learning_summary(),
+            "name_learning": dynamic_name_learning.get_learning_stats()
+        }
+    except Exception as e:
+        return {"error": f"خطا در دریافت خلاصه یادگیری: {str(e)}"}
+
+@app.get("/learning/profile")
+async def get_learning_profile():
+    """پروفایل یادگیری کاربر"""
+    try:
+        return {
+            "success": True,
+            "profile": personal_learning_system.profile,
+            "summary": personal_learning_system.get_profile_summary()
+        }
+    except Exception as e:
+        return {"error": f"خطا در دریافت پروفایل یادگیری: {str(e)}"}
+
+@app.get("/learning/recommendations")
+async def get_learning_recommendations():
+    """توصیه‌های شخصی‌سازی شده بر اساس یادگیری"""
+    try:
+        from brain.learning.deep_personality_learning import deep_personality_learning
+        return {
+            "success": True,
+            "recommendations": deep_personality_learning.get_recommendations()
+        }
+    except Exception as e:
+        return {"error": f"خطا در دریافت توصیه‌ها: {str(e)}"}
+
+@app.get("/learning/vocabulary")
+async def get_learned_vocabulary():
+    """دریافت واژگان یادگیری شده"""
+    try:
+        return {
+            "success": True,
+            "vocabulary": personal_learning_system.vocabulary,
+            "count": len(personal_learning_system.vocabulary)
+        }
+    except Exception as e:
+        return {"error": f"خطا در دریافت واژگان: {str(e)}"}
+
+@app.get("/learning/rules")
+async def get_learned_rules():
+    """دریافت قوانین یادگیری شده"""
+    try:
+        return {
+            "success": True,
+            "rules": personal_learning_system.rules,
+            "count": len(personal_learning_system.rules)
+        }
+    except Exception as e:
+        return {"error": f"خطا در دریافت قوانین: {str(e)}"}
+
+@app.get("/learning/tone")
+async def get_tone_preferences():
+    """دریافت ترجیحات لحن"""
+    try:
+        return {
+            "success": True,
+            "tone_preferences": personal_learning_system.get_tone_preferences()
+        }
+    except Exception as e:
+        return {"error": f"خطا در دریافت ترجیحات لحن: {str(e)}"}
+
+@app.post("/learning/vocabulary/add")
+async def add_vocabulary_manually(word: str = Form(...), meaning: str = Form(...)):
+    """اضافه کردن واژه به صورت دستی"""
+    try:
+        analysis = {
+            "type": "vocabulary",
+            "word": word.strip(),
+            "meaning": meaning.strip(),
+            "confidence": 0.95,
+            "context": f"اضافه شده دستی: {word} = {meaning}",
+            "response_needed": True
+        }
+        
+        result = personal_learning_system.learn_from_analysis(analysis)
+        
+        return {
+            "success": True,
+            "result": result,
+            "message": f"واژه '{word}' با معنی '{meaning}' اضافه شد"
+        }
+        
+    except Exception as e:
+        return {"error": f"خطا در اضافه کردن واژه: {str(e)}"}
+
+@app.post("/learning/rule/add")
+async def add_rule_manually(rule_text: str = Form(...)):
+    """اضافه کردن قانون به صورت دستی"""
+    try:
+        analysis = {
+            "type": "rule",
+            "rule_text": rule_text.strip(),
+            "condition": "همیشه",
+            "action": rule_text.strip(),
+            "confidence": 0.95,
+            "context": f"قانون دستی: {rule_text}",
+            "response_needed": True
+        }
+        
+        result = personal_learning_system.learn_from_analysis(analysis)
+        
+        return {
+            "success": True,
+            "result": result,
+            "message": f"قانون '{rule_text}' اضافه شد"
+        }
+        
+    except Exception as e:
+        return {"error": f"خطا در اضافه کردن قانون: {str(e)}"}
+
+@app.post("/learning/reset")
+async def reset_personal_learning():
+    """ریست کردن تمام یادگیری‌های شخصی"""
+    try:
+        personal_learning_system.reset_learning()
+        return {
+            "success": True,
+            "message": "تمام یادگیری‌های شخصی ریست شدند"
+        }
+    except Exception as e:
+        return {"error": f"خطا در ریست یادگیری: {str(e)}"}
+
+@app.post("/learning/test")
+async def test_learning_system(message: str = Form(...)):
+    """تست سیستم یادگیری با پیام نمونه"""
+    try:
+        # تست تشخیص یادگیری
+        analysis = personal_learning_system.analyze_message_for_learning(message)
+        
+        if analysis:
+            # اگر یادگیری تشخیص داده شد، آن را اعمال کن
+            result = personal_learning_system.learn_from_analysis(analysis)
+            return {
+                "success": True,
+                "learning_detected": True,
+                "analysis": analysis,
+                "result": result,
+                "message": "یادگیری تشخیص داده شد و اعمال شد"
+            }
+        else:
+            # اگر یادگیری تشخیص داده نشد، فقط واژگان را اعمال کن
+            processed_message = personal_learning_system.apply_vocabulary_to_message(message)
+            return {
+                "success": True,
+                "learning_detected": False,
+                "original_message": message,
+                "processed_message": processed_message,
+                "vocabulary_applied": processed_message != message,
+                "message": "یادگیری تشخیص داده نشد، فقط واژگان اعمال شدند"
+            }
+        
+    except Exception as e:
+        return {"error": f"خطا در تست سیستم یادگیری: {str(e)}"}
+
+@app.get("/name/current")
+async def get_current_name():
+    """دریافت نام فعلی AI"""
+    return {
+        "current_name": dynamic_name_learning.get_current_name(),
+        "confidence": dynamic_name_learning.get_name_confidence(),
+        "stats": dynamic_name_learning.get_learning_stats()
+    }
+
+@app.post("/name/set")
+async def set_name_directly(name: str = Form(...)):
+    """تنظیم مستقیم نام (برای تست)"""
+    try:
+        # شبیه‌سازی یادگیری مستقیم
+        analysis = {
+            "type": "direct_assignment",
+            "extracted_name": name,
+            "confidence": 0.95,
+            "context": f"تنظیم مستقیم نام به {name}",
+            "response_needed": True
+        }
+        
+        result = dynamic_name_learning.learn_name(analysis)
+        
+        return {
+            "success": True,
+            "result": result,
+            "new_name": dynamic_name_learning.get_current_name()
+        }
+        
+    except Exception as e:
+        return {"error": f"خطا در تنظیم نام: {str(e)}"}
+
+@app.post("/name/reset")
+async def reset_name_learning():
+    """ریست کردن یادگیری نام"""
+    try:
+        dynamic_name_learning.reset_name_learning()
+        return {
+            "success": True,
+            "message": "یادگیری نام ریست شد",
+            "current_name": dynamic_name_learning.get_current_name()
+        }
+    except Exception as e:
+        return {"error": f"خطا در ریست نام: {str(e)}"}
+
 # 👤 User Profile API Endpoints
-@app.get("/user/profile")
-async def get_user_profile():
-    """دریافت پروفایل کاربر"""
+@app.get("/user/insights")
+async def get_user_insights():
+    """دریافت بینش‌های پروفایل کاربر"""
     try:
         from brain.user_profiler import user_profiler
         
@@ -532,11 +866,11 @@ async def get_user_profile():
         return {
             "success": True,
             "profile": insights,
-            "message": "پروفایل کاربر دریافت شد"
+            "message": "بینش‌های پروفایل کاربر دریافت شد"
         }
         
     except Exception as e:
-        return {"error": f"خطا در دریافت پروفایل: {str(e)}"}
+        return {"error": f"خطا در دریافت بینش‌های پروفایل: {str(e)}"}
 
 @app.get("/user/relationship")
 async def get_relationship_status():
@@ -706,6 +1040,9 @@ async def system_health():
 async def process_user_message(message: str, thinking_callback=None) -> str:
     """پردازش پیام کاربر و تولید پاسخ"""
     try:
+        # به‌روزرسانی اطلاعات کاربر از پیام
+        user_memory.update_user_info_from_message(message)
+        
         # ذخیره در حافظه
         memory_manager.store_conversation("user", message)
         
@@ -723,13 +1060,23 @@ async def process_user_message(message: str, thinking_callback=None) -> str:
         # ذخیره پاسخ در حافظه
         memory_manager.store_conversation("ai", response)
         
+        # ذخیره در حافظه کاربر
+        user_memory.remember_conversation(message, response)
+        
+        # یادگیری غیرمستقیم از مکالمه (ایده از پرامپت)
+        passive_result = personal_learning_system.passive_learning_from_conversation(message, response)
+        if passive_result["facts_learned"] > 0:
+            print(f"🔍 یادگیری غیرمستقیم: {passive_result['facts_learned']} اطلاعات جدید")
+        
         # به‌روزرسانی شخصیت
         personality_engine.update_from_interaction(message, response)
         
         return response
         
     except Exception as e:
+        import traceback
         print(f"خطا در پردازش پیام: {e}")
+        print(f"جزئیات خطا: {traceback.format_exc()}")
         return "متأسفم، مشکلی پیش آمده. لطفاً دوباره تلاش کنید."
 
 async def send_thinking_message(message: str):

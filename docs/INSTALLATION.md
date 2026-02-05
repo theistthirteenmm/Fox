@@ -37,7 +37,7 @@ cd robah
 
 #### Windows:
 ```cmd
-start_robah.bat
+start.bat
 ```
 
 #### Linux/macOS:

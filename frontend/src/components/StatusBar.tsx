@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 
+const isDirectDev = window.location.port === '3000' || window.location.port === '3001';
+const API_BASE = isDirectDev ? 'http://localhost:8000' : '/api';
+
 const StatusContainer = styled.div`
   background: rgba(0, 0, 0, 0.2);
   padding: 0.5rem 2rem;
@@ -86,6 +89,10 @@ interface SystemStatus {
     knowledge: number;
   };
   personality_level: number;
+  model_policy?: {
+    allow_heavy: boolean;
+    current_model: string;
+  };
   web_search?: {
     web_enabled: boolean;
     internet_connected: boolean;
@@ -108,9 +115,17 @@ interface StatusBarProps {
     fileName?: string;
     progress?: number;
   };
+  onToggleHeavyModels?: (enabled: boolean) => void;
+  isUpdatingModelPolicy?: boolean;
 }
 
-const StatusBar: React.FC<StatusBarProps> = ({ isConnected, systemStatus, uploadStatus }) => {
+const StatusBar: React.FC<StatusBarProps> = ({
+  isConnected,
+  systemStatus,
+  uploadStatus,
+  onToggleHeavyModels,
+  isUpdatingModelPolicy
+}) => {
   const [isRestarting, setIsRestarting] = useState(false);
   const [restartStatus, setRestartStatus] = useState<string>('');
 
@@ -124,7 +139,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ isConnected, systemStatus, upload
       setIsRestarting(true);
       setRestartStatus('🔄 در حال ریستارت...');
       
-      const response = await fetch('http://localhost:8000/system/restart', {
+      const response = await fetch(`${API_BASE}/system/restart`, {
         method: 'POST',
       });
       
@@ -250,6 +265,32 @@ const StatusBar: React.FC<StatusBarProps> = ({ isConnected, systemStatus, upload
             <span>🕐</span>
             <span>{formatLastUpdate(systemStatus.timestamp)}</span>
           </StatusItem>
+
+          {systemStatus.model_policy && onToggleHeavyModels && (
+            <StatusItem
+              style={{
+                cursor: isUpdatingModelPolicy ? 'not-allowed' : 'pointer',
+                opacity: isUpdatingModelPolicy ? 0.6 : 1,
+                backgroundColor: systemStatus.model_policy.allow_heavy
+                  ? 'rgba(34,197,94,0.2)'
+                  : 'rgba(156,163,175,0.2)',
+                padding: '4px 8px',
+                borderRadius: '8px',
+                border: '1px solid rgba(100,116,139,0.3)'
+              }}
+              onClick={() => {
+                if (!isUpdatingModelPolicy) {
+                  onToggleHeavyModels(!systemStatus.model_policy?.allow_heavy);
+                }
+              }}
+              title="فعال/غیرفعال کردن مدل‌های سنگین (کیفیت بالا)"
+            >
+              <span>{systemStatus.model_policy.allow_heavy ? '🏋️' : '🪶'}</span>
+              <span>
+                {systemStatus.model_policy.allow_heavy ? 'مدل سنگین' : 'مدل سبک'}
+              </span>
+            </StatusItem>
+          )}
           
           {/* دکمه ریستارت */}
           <StatusItem 
