@@ -20,7 +20,6 @@ from ..learning.personal_learning_system import personal_learning_system
 
 # سیستم دستیار شخصی
 from .personal_ai_core import personal_ai, PersonalAI
-from ..interfaces.physical_interface import physical_interface, EmotionExpression, MovementType
 
 # سیستم‌های پیشرفته جدید
 from ..utils.predictive_intelligence import predictive_intelligence

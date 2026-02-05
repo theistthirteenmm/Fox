@@ -1,44 +1,31 @@
-# 🦊 کتابخانه‌های مورد نیاز روباه
+# Fox - Dependencies
 
-# Backend اصلی
+# Backend
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 websockets==12.0
 python-multipart==0.0.6
 
-# AI و Machine Learning
+# AI
 requests==2.31.0
 numpy==1.24.3
 
-# حافظه و پایگاه داده
+# Memory
 chromadb==0.4.15
 
-# 🎙️ سیستم صوتی
-openai-whisper==20231117
+# Audio (optional)
 pyttsx3==2.90
 speechrecognition==3.10.0
-pyaudio==0.2.11; platform_system != "Windows"
 
-# 📁 مدیریت فایل
+# File handling
 PyPDF2==3.0.1
 python-docx==1.1.0
 Pillow==10.1.0
-pytesseract==0.3.10
 
-# 📊 تحلیل داده
-pandas==2.1.4
-matplotlib==3.8.2
-seaborn==0.13.0
-
-# 💻 رابط CLI
+# CLI
 colorama>=0.4.6
 
-# ابزارهای کمکی
+# Utils
 python-dotenv==1.0.0
 pydantic==2.5.0
 aiofiles==23.2.1
-
-# توسعه (اختیاری)
-pytest==7.4.3
-black==23.11.0
-flake8==6.1.0
