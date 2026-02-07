@@ -100,6 +100,15 @@ class FoxCLI:
             return "Connection error"
         return response
 
+    def show_commands(self):
+        """نمایش لیست کوتاه دستورات"""
+        commands = [
+            "/help", "/status", "/ping", "/test", "/models",
+            "/voice", "/listen", "/config", "/server", "/update",
+            "/clear", "/exit"
+        ]
+        print(f"{self.dim}{' '.join(commands)}{self.reset}")
+
     def cmd_help(self):
         """نمایش راهنما"""
         print(f"""
@@ -353,6 +362,11 @@ class FoxCLI:
             try:
                 user_input = input(f"{self.user}You: {self.reset}").strip()
                 if not user_input:
+                    continue
+
+                # نمایش دستورات با /
+                if user_input == '/':
+                    self.show_commands()
                     continue
 
                 # دستورات
