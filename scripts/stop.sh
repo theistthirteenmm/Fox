@@ -8,6 +8,10 @@ echo "🛑 توقف سرویس‌های روباه..."
 # توقف Nginx
 ./scripts/stop_nginx.sh >/dev/null 2>&1
 
+
+
+
+
 # توقف فرآیندهای Python (Backend)
 echo "🐍 توقف Backend..."
 pkill -f "python backend/main.py" 2>/dev/null

@@ -3,6 +3,9 @@
 مدیریت ذخیره و بازیابی اطلاعات
 """
 
+import os
+os.environ["ANONYMIZED_TELEMETRY"] = "False"
+
 import chromadb
 from chromadb.config import Settings
 import json
