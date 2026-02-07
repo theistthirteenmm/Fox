@@ -3,12 +3,12 @@
 ## Installation
 
 ```bash
-pip install git+https://github.com/theist.thirteenmm/Fox.git
+pip install git+https://github.com/theistthirteenmm/Fox.git
 ```
 
 With audio support:
 ```bash
-pip install "git+https://github.com/theist.thirteenmm/Fox.git#egg=fox-ai[audio]"
+pip install "git+https://github.com/theistthirteenmm/Fox.git#egg=fox-ai[audio]"
 ```
 
 ---

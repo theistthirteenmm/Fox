@@ -39,17 +39,17 @@ ollama pull partai/dorna-llama3:8b-instruct-q8_0
 
 ### From GitHub
 ```bash
-pip install git+https://github.com/theist.thirteenmm/Fox.git
+pip install git+https://github.com/theistthirteenmm/Fox.git
 ```
 
 ### With Audio Support
 ```bash
-pip install "git+https://github.com/theist.thirteenmm/Fox.git#egg=fox-ai[audio]"
+pip install "git+https://github.com/theistthirteenmm/Fox.git#egg=fox-ai[audio]"
 ```
 
 ### Local Development
 ```bash
-git clone https://github.com/theist.thirteenmm/Fox.git
+git clone https://github.com/theistthirteenmm/Fox.git
 cd Fox
 pip install -e .
 ```

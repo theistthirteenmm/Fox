@@ -1,0 +1,56 @@
+{
+  "owner_name": "حامد",
+  "ai_name": "روباه",
+  "birth_date": "2026-02-05T13:16:02.804026",
+  "relationship_level": 1,
+  "personal_memories": {
+    "general_medium_pattern": {
+      "id": "general_medium_pattern",
+      "domain": "work_patterns",
+      "content": "الگوی general با فوریت medium",
+      "importance": 0.6,
+      "confidence": 0.7,
+      "created_at": "2026-02-05T13:16:38.990245",
+      "last_used": "2026-02-05T13:19:17.752697",
+      "usage_count": 3,
+      "emotional_weight": 0.0
+    }
+  },
+  "learned_patterns": {
+    "work_schedule": {
+      "13:3": [
+        {
+          "message_type": "general",
+          "urgency": "medium",
+          "timestamp": "2026-02-05T13:16:38.991216"
+        },
+        {
+          "message_type": "general",
+          "urgency": "medium",
+          "timestamp": "2026-02-05T13:17:23.039555"
+        },
+        {
+          "message_type": "general",
+          "urgency": "medium",
+          "timestamp": "2026-02-05T13:19:17.753697"
+        }
+      ]
+    },
+    "communication_style": {},
+    "preferred_responses": {},
+    "task_priorities": {},
+    "emotional_states": {}
+  },
+  "current_mood": "curious",
+  "energy_level": 1.0,
+  "focus_area": null,
+  "last_interaction": "2026-02-05T13:19:17.752697",
+  "relationship_stats": {
+    "total_interactions": 3,
+    "days_together": 0,
+    "trust_level": 0.1,
+    "understanding_level": 0.1,
+    "shared_experiences": 0
+  },
+  "last_companion_note_at": null
+}

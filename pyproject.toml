@@ -9,7 +9,7 @@ description = "Fox - Persian AI Assistant CLI"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "theist.thirteenmm"}
+    {name = "theistthirteenmm"}
 ]
 requires-python = ">=3.8"
 classifiers = [
@@ -49,8 +49,8 @@ full = [
 fox = "fox_cli.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/theist.thirteenmm/Fox"
-Repository = "https://github.com/theist.thirteenmm/Fox"
+Homepage = "https://github.com/theistthirteenmm/Fox"
+Repository = "https://github.com/theistthirteenmm/Fox"
 
 [tool.setuptools.packages.find]
 include = ["fox_cli*"]

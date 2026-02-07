@@ -1,0 +1,78 @@
+{
+  "owner_name": "حامد",
+  "personality_insights": {
+    "communication_formality": {
+      "dimension": "communication_style",
+      "insight": "ترجیح به ارتباط neutral",
+      "confidence": 0.7000000000000001,
+      "evidence": [
+        "در 1 تعامل"
+      ],
+      "discovered_at": "2026-02-05T13:17:09.366296",
+      "reinforcement_count": 3,
+      "last_observed": "2026-02-05T13:19:46.780613"
+    },
+    "learning_detail_preference": {
+      "dimension": "learning_preference",
+      "insight": "ترجیح به یادگیری medium",
+      "confidence": 0.6,
+      "evidence": [
+        "در 1 درخواست یادگیری"
+      ],
+      "discovered_at": "2026-02-05T13:17:53.770089",
+      "reinforcement_count": 1,
+      "last_observed": "2026-02-05T13:17:53.770089"
+    }
+  },
+  "behavior_patterns": {
+    "time_13_general": {
+      "pattern_id": "time_13_general",
+      "description": "فعالیت general در ساعت 13",
+      "triggers": [
+        "hour_13"
+      ],
+      "responses": [
+        "general"
+      ],
+      "frequency": 3,
+      "reliability": 0.7,
+      "context": {
+        "hour": 13,
+        "type": "general"
+      }
+    }
+  },
+  "communication_analysis": {
+    "vocabulary_preferences": {},
+    "sentence_patterns": [],
+    "emotional_expressions": {},
+    "formality_levels": [
+      "neutral",
+      "neutral",
+      "neutral"
+    ],
+    "response_preferences": {}
+  },
+  "decision_patterns": {
+    "decision_speed": [],
+    "information_need": [],
+    "risk_tolerance": [],
+    "consultation_tendency": []
+  },
+  "learning_patterns": {
+    "preferred_formats": {},
+    "detail_level": [
+      "medium"
+    ],
+    "example_preference": [
+      "balanced"
+    ],
+    "feedback_style": []
+  },
+  "emotional_patterns": {
+    "stress_indicators": [],
+    "motivation_factors": [],
+    "energy_cycles": {},
+    "mood_triggers": {}
+  }
+}
