@@ -121,6 +121,7 @@ class FoxCLI:
 
 {self.dim}Other:{self.reset}
   /config        - Show config
+  /update        - Update Fox to latest version
   /clear, /c     - Clear screen
   /help, /h      - Show this help
   /exit, /q      - Exit
@@ -212,6 +213,26 @@ class FoxCLI:
         print()
         print(f"{self.ok}All tests passed!{self.reset}")
 
+    def cmd_update(self):
+        """آپدیت Fox به آخرین نسخه"""
+        import subprocess
+        print(f"{self.dim}Updating Fox...{self.reset}")
+        try:
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "--upgrade",
+                 "git+https://github.com/theistthirteenmm/Fox.git"],
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                print(f"{self.ok}✓ Fox updated successfully!{self.reset}")
+                print(f"{self.dim}Restart Fox to apply changes.{self.reset}")
+            else:
+                print(f"{self.err}Update failed:{self.reset}")
+                print(result.stderr)
+        except Exception as e:
+            print(f"{self.err}Update error: {e}{self.reset}")
+
     def cmd_models(self):
         """نمایش مدل‌های موجود"""
         status = self.client.get_status()
@@ -297,6 +318,8 @@ class FoxCLI:
             self.cmd_test()
         elif cmd in ['/models', '/model']:
             self.cmd_models()
+        elif cmd in ['/update']:
+            self.cmd_update()
         elif cmd in ['/voice', '/v', '/صدا']:
             self.cmd_voice_toggle()
         elif cmd in ['/listen', '/l', '/گوش']:
