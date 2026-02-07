@@ -39,6 +39,7 @@ class FoxCLI:
         self.dim = Fore.LIGHTBLACK_EX
         self.warn = Fore.YELLOW
         self.err = Fore.RED
+        self.ok = Fore.GREEN
         self.reset = Style.RESET_ALL
 
     def banner(self):
@@ -103,14 +104,26 @@ class FoxCLI:
         """نمایش راهنما"""
         print(f"""
 {self.fox}Commands:{self.reset}
-{self.dim}  /help, /h      - Show this help
+
+{self.dim}Connection:{self.reset}
+  /server <url>  - Set server address
+  /ping          - Test server connection
+  /reconnect     - Reconnect to server
   /status, /s    - Server status
+
+{self.dim}Testing:{self.reset}
+  /test          - Full system test
+  /models        - List available AI models
+
+{self.dim}Audio:{self.reset}
   /voice, /v     - Toggle voice output
   /listen, /l    - Voice input (speak)
+
+{self.dim}Other:{self.reset}
   /config        - Show config
-  /server <url>  - Set server address
   /clear, /c     - Clear screen
-  /exit, /q      - Exit{self.reset}
+  /help, /h      - Show this help
+  /exit, /q      - Exit
 """)
 
     def cmd_status(self):
@@ -118,10 +131,11 @@ class FoxCLI:
         status = self.client.get_status()
         if status:
             print(f"{self.fox}Server Status:{self.reset}")
-            print(f"{self.dim}  Brain: {'Loaded' if status.get('brain_loaded') else 'Not loaded'}")
-            print(f"  Memory: {status.get('memory_size', {})}")
+            print(f"{self.dim}  Brain: {self.ok}Loaded{self.reset}" if status.get('brain_loaded') else f"{self.dim}  Brain: {self.err}Not loaded{self.reset}")
+            print(f"{self.dim}  Memory: {status.get('memory_size', {})}")
             if status.get('model_policy'):
-                print(f"  Model: {status['model_policy'].get('current_model')}{self.reset}")
+                print(f"  Model: {status['model_policy'].get('current_model')}")
+                print(f"  Heavy models: {'Enabled' if status['model_policy'].get('allow_heavy') else 'Disabled'}{self.reset}")
         else:
             print(f"{self.err}Server not available{self.reset}")
 
@@ -137,7 +151,83 @@ class FoxCLI:
         self.config["server"] = url
         save_config(self.config)
         self.client = FoxClient(f"http://{url}")
-        print(f"{self.dim}Server set to: {url}{self.reset}")
+        print(f"{self.ok}Server set to: {url}{self.reset}")
+        # تست اتصال
+        self.cmd_ping()
+
+    def cmd_ping(self):
+        """تست اتصال به سرور"""
+        print(f"{self.dim}Pinging server...{self.reset}")
+        start = time.time()
+        if self.client.is_available():
+            elapsed = (time.time() - start) * 1000
+            print(f"{self.ok}✓ Server is online ({elapsed:.0f}ms){self.reset}")
+        else:
+            print(f"{self.err}✗ Server not available{self.reset}")
+
+    def cmd_reconnect(self):
+        """اتصال مجدد به سرور"""
+        print(f"{self.dim}Reconnecting...{self.reset}")
+        self.client = FoxClient()
+        self.cmd_ping()
+
+    def cmd_test(self):
+        """تست کامل سیستم"""
+        print(f"{self.fox}System Test:{self.reset}")
+        print()
+
+        # 1. تست اتصال
+        print(f"{self.dim}[1/4] Testing connection...{self.reset}")
+        if self.client.is_available():
+            print(f"  {self.ok}✓ Server connected{self.reset}")
+        else:
+            print(f"  {self.err}✗ Server not available{self.reset}")
+            return
+
+        # 2. تست وضعیت
+        print(f"{self.dim}[2/4] Checking brain...{self.reset}")
+        status = self.client.get_status()
+        if status and status.get('brain_loaded'):
+            print(f"  {self.ok}✓ Brain loaded{self.reset}")
+        else:
+            print(f"  {self.err}✗ Brain not loaded{self.reset}")
+            return
+
+        # 3. تست حافظه
+        print(f"{self.dim}[3/4] Checking memory...{self.reset}")
+        if status and status.get('memory_size'):
+            mem = status.get('memory_size', {})
+            print(f"  {self.ok}✓ Memory OK (short: {mem.get('short_term', 0)}, conv: {mem.get('conversations', 0)}){self.reset}")
+        else:
+            print(f"  {self.warn}? Memory status unknown{self.reset}")
+
+        # 4. تست پاسخ
+        print(f"{self.dim}[4/4] Testing AI response...{self.reset}")
+        response = self.client.chat("سلام")
+        if response:
+            print(f"  {self.ok}✓ AI responding{self.reset}")
+        else:
+            print(f"  {self.err}✗ AI not responding{self.reset}")
+
+        print()
+        print(f"{self.ok}All tests passed!{self.reset}")
+
+    def cmd_models(self):
+        """نمایش مدل‌های موجود"""
+        status = self.client.get_status()
+        if status and status.get('model_policy'):
+            policy = status['model_policy']
+            print(f"{self.fox}AI Models:{self.reset}")
+            print(f"{self.dim}  Current: {policy.get('current_model', 'Unknown')}")
+            print(f"  Heavy models: {'Enabled' if policy.get('allow_heavy') else 'Disabled'}{self.reset}")
+            print()
+            print(f"{self.dim}Available models:{self.reset}")
+            print(f"  - partai/dorna-llama3:8b (Persian)")
+            print(f"  - deepseek-r1:7b (Reasoning)")
+            print(f"  - deepseek-coder-v2:16b (Code)")
+            print(f"  - llama3.2:3b (Fast)")
+        else:
+            print(f"{self.err}Cannot get model info{self.reset}")
 
     def cmd_voice_toggle(self):
         """تغییر وضعیت صدا"""
@@ -199,6 +289,14 @@ class FoxCLI:
                 self.cmd_server(args[0])
             else:
                 print(f"{self.warn}Usage: /server <host:port>{self.reset}")
+        elif cmd in ['/ping']:
+            self.cmd_ping()
+        elif cmd in ['/reconnect', '/rc']:
+            self.cmd_reconnect()
+        elif cmd in ['/test']:
+            self.cmd_test()
+        elif cmd in ['/models', '/model']:
+            self.cmd_models()
         elif cmd in ['/voice', '/v', '/صدا']:
             self.cmd_voice_toggle()
         elif cmd in ['/listen', '/l', '/گوش']:
@@ -220,7 +318,7 @@ class FoxCLI:
         # بررسی سرور
         if not self.client.is_available():
             print(f"{self.warn}Server not available at {get_server_url()}")
-            print(f"Start server or set address with: fox config --server <host:port>{self.reset}")
+            print(f"Start server or set address with: /server <host:port>{self.reset}")
             print()
 
         self.banner()
